@@ -246,13 +246,25 @@ jobs:
           name: baihu-binaries
           path: .
 
+      - name: Prepare Release Notes
+        if: matrix.base_type == 'debian'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view ${{ github.ref_name }} > /dev/null 2>&1; then
+            echo "$(cat CHANGELOG.md)" > FINAL_CHANGELOG.md
+            echo -e "\n\n" >> FINAL_CHANGELOG.md
+            gh release view ${{ github.ref_name }} --json body -q .body >> FINAL_CHANGELOG.md
+          else
+            cp CHANGELOG.md FINAL_CHANGELOG.md
+          fi
+
       - name: Create GitHub Release
         if: matrix.base_type == 'debian'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          body_path: CHANGELOG.md
-          append_body: true  # 追加模式：保留已有说明，在后面添加 CHANGELOG.md
+          body_path: FINAL_CHANGELOG.md
           files: |
             baihu-linux-amd64.tar.gz
             baihu-linux-arm64.tar.gz
