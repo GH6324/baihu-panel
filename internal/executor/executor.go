@@ -2,6 +2,7 @@ package executor
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -23,6 +24,7 @@ type Task interface {
 	GetTimeout() int
 	GetWorkDir() string
 	GetEnvs() string
+	GetEnvVars() []string
 	GetLanguages() []map[string]string
 	GetUseMise() bool
 }
@@ -329,4 +331,30 @@ func ParseEnvVars(envStr string) []string {
 	}
 
 	return result
+}
+
+// FormatEnvVars 将环境变量列表格式化为逗号分隔的字符串 "KEY1=VALUE1,KEY2=VALUE2"
+// 会对 , 和 = 进行转义
+func FormatEnvVars(envs []string) string {
+	if len(envs) == 0 {
+		return ""
+	}
+
+	pairs := make([]string, 0, len(envs))
+	for _, pair := range envs {
+		// 寻找第一个等号
+		idx := strings.Index(pair, "=")
+		if idx == -1 {
+			continue
+		}
+		name := pair[:idx]
+		value := pair[idx+1:]
+
+		// 转义特殊字符
+		encodedValue := strings.ReplaceAll(value, ",", "{{COMMA}}")
+		encodedValue = strings.ReplaceAll(encodedValue, "=", "{{EQUAL}}")
+		pairs = append(pairs, fmt.Sprintf("%s=%s", name, encodedValue))
+	}
+
+	return strings.Join(pairs, ",")
 }

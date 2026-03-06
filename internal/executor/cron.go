@@ -99,7 +99,12 @@ func (m *CronManager) AddTask(task CronTask) error {
 				Type:      TaskTypeCron,
 				Timeout:   timeout,
 				WorkDir:   workDir,
-				Envs:      ParseEnvVars(envs),
+				Envs:      func() []string {
+					if vars := task.GetEnvVars(); len(vars) > 0 {
+						return vars
+					}
+					return ParseEnvVars(envs)
+				}(),
 				Languages: languages,
 				UseMise:   useMise,
 			}

@@ -37,6 +37,7 @@ type SettingsService interface {
 // EnvService 接口定义（避免循环依赖）
 type EnvService interface {
 	GetEnvVarsByIDs(ids string) []string
+	GetAllEnvVars() []string
 }
 
 // Notifier 通知服务接口定义（避免循环依赖）
@@ -372,7 +373,7 @@ func (es *ExecutorService) HandleTaskRetry(task *models.Task, req *executor.Exec
 					return nil
 				}
 
-				newEnvs := es.loadEnvVars(latestTask.Envs)
+				newEnvs := es.loadEnvVars(latestTask.ID, latestTask.Envs)
 				return &executor.ExecutionRequest{
 					TaskID:    req.TaskID,
 					Name:      latestTask.Name,
@@ -444,14 +445,10 @@ func (es *ExecutorService) ExecuteDispatcher(ctx context.Context, req *executor.
 		}
 	}
 
-	// 加载环境变量
-	if task.Envs != "" {
-		req.Envs = append(req.Envs, es.loadEnvVars(task.Envs)...)
-	}
-
 	// 远程任务
 	if task.AgentID != nil && *task.AgentID != "" {
-		return es.ExecuteRemoteForScheduler(task, req.LogID)
+		// 将请求中已包含的环境变量（已合并）传递给 Agent
+		return es.ExecuteRemoteForScheduler(task, req.LogID, executor.FormatEnvVars(req.Envs))
 	}
 
 	// 本地任务
@@ -504,6 +501,9 @@ func (es *ExecutorService) AddCronTask(task *models.Task) error {
 		es.RemoveCronTask(task.ID) // 如果不是cron类型，确保从调度器移除
 		return nil
 	}
+	// 在加入调度器前，预先加载好环境信息
+	task.RuntimeEnvs = es.loadEnvVars(task.ID, task.Envs)
+
 	return es.cronManager.AddTask(task)
 }
 
@@ -540,7 +540,7 @@ func (es *ExecutorService) loadCronTasks() {
 			}(task)
 		} else if task.TriggerType == constant.TriggerTypeCron && task.Schedule != "" && (task.AgentID == nil || *task.AgentID == "") {
 			// 只调度本地任务（agent_id 为空或 0）的定时任务
-			err := es.cronManager.AddTask(&task)
+			err := es.AddCronTask(&task)
 			if err != nil {
 				continue
 			}
@@ -583,7 +583,7 @@ func (es *ExecutorService) ExecuteTask(taskID string, extraEnvs []string) *execu
 		}
 	}
 
-	envs := es.loadEnvVars(task.Envs)
+	envs := es.loadEnvVars(task.ID, task.Envs)
 	if len(extraEnvs) > 0 {
 		envs = append(envs, extraEnvs...)
 	}
@@ -613,7 +613,7 @@ func (es *ExecutorService) ExecuteTask(taskID string, extraEnvs []string) *execu
 // StopTaskExecution stops a running task execution by LogID
 func (es *ExecutorService) StopTaskExecution(logID string) error {
 	var taskLog models.TaskLog
-	if err := database.DB.First(&taskLog, logID).Error; err != nil {
+	if err := database.DB.Where("id = ?", logID).First(&taskLog).Error; err != nil {
 		return fmt.Errorf("日志不存在")
 	}
 
@@ -819,7 +819,7 @@ func (es *ExecutorService) RemoveRunningGo(taskID string, goid int64) {
 }
 
 // ExecuteRemoteForScheduler 供 Scheduler 调用，执行远程任务并等待结果
-func (es *ExecutorService) ExecuteRemoteForScheduler(task *models.Task, logID string) (*executor.Result, error) {
+func (es *ExecutorService) ExecuteRemoteForScheduler(task *models.Task, logID string, envs string) (*executor.Result, error) {
 	agentID := *task.AgentID
 	logger.Infof("[Executor] 远程执行任务 #%s: %s (Agent #%s, LogID: %s)", task.ID, task.Name, agentID, logID)
 
@@ -843,6 +843,7 @@ func (es *ExecutorService) ExecuteRemoteForScheduler(task *models.Task, logID st
 	err := es.agentWSManager.SendToAgent(agentID, constant.WSTypeExecute, map[string]interface{}{
 		"task_id": task.ID,
 		"log_id":  logID,
+		"envs":    envs,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("发送执行命令失败: %v", err)
@@ -936,8 +937,24 @@ func (es *ExecutorService) BuildRepoCommand(task *models.Task) (string, string) 
 	return exePath + " " + strings.Join(args, " "), filepath.Dir(exePath)
 }
 
-// loadEnvVars 加载环境变量（支持重名合并）
-func (es *ExecutorService) loadEnvVars(envIDs string) []string {
+// loadEnvVars 加载环境变量，支持全局注入及重名合并
+func (es *ExecutorService) loadEnvVars(taskID string, envIDs string) []string {
+	// 1. 检查是否开启了注入全部环境变量
+	if taskID != "" && es.taskService != nil {
+		task := es.taskService.GetTaskByID(taskID)
+		if task != nil && task.Config != "" {
+			var config models.TaskConfig
+			if err := json.Unmarshal([]byte(task.Config), &config); err == nil {
+				if config.AllEnvs {
+					if es.envService != nil {
+						return es.envService.GetAllEnvVars()
+					}
+				}
+			}
+		}
+	}
+
+	// 2. 否则按 ID 列表进行加载（支持合并逻辑在 envService 中处理）
 	if envIDs == "" {
 		return nil
 	}

@@ -27,7 +27,8 @@ type RepoConfig struct {
 
 // TaskConfig  任务配置  RepoConfig+TaskConfig=task.config
 type TaskConfig struct {
-	Concurrency int `json:"$task_concurrency"` // 0: disable concurrency, 1: enable concurrency
+	Concurrency int  `json:"$task_concurrency"` // 0: disable concurrency, 1: enable concurrency
+	AllEnvs     bool `json:"$task_all_envs"`     // 开启则注入全部环境变量
 }
 
 // Task 代表一个计划任务
@@ -51,6 +52,7 @@ type Task struct {
 	RandomRange   int                 `json:"random_range" gorm:"default:0"`             // 随机延迟范围(秒)
 	Enabled       bool                `json:"enabled" gorm:"default:true"`
 	RunningGo     string              `json:"running_go" gorm:"type:text"` // 正在运行的 go routine id 数组 (JSON)
+	RuntimeEnvs   []string            `json:"-" gorm:"-"`                  // 运行时环境变量（非持久化）
 	LastRun       *LocalTime          `json:"last_run"`
 	NextRun       *LocalTime          `json:"next_run"`
 	CreatedAt     LocalTime           `json:"created_at"`
@@ -88,6 +90,10 @@ func (t *Task) GetEnvs() string {
 
 func (t *Task) GetLanguages() []map[string]string {
 	return t.Languages
+}
+
+func (t *Task) GetEnvVars() []string {
+	return t.RuntimeEnvs
 }
 
 func (t *Task) GetUseMise() bool {

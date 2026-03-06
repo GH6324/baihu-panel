@@ -125,6 +125,32 @@ func (es *EnvService) GetEnvVarsByIDs(envIDs string) []string {
 	}
 
 	ids := splitEnvIDs(envIDs)
+	var envs []models.EnvironmentVariable
+	for _, id := range ids {
+		env := es.GetEnvVarByID(id)
+		if env != nil {
+			envs = append(envs, *env)
+		}
+	}
+
+	return es.formatEnvVars(envs)
+}
+
+// GetAllEnvVars 获取系统中所有的环境变量，并按 NAME=VALUE 格式返回（支持重名合并）
+func (es *EnvService) GetAllEnvVars() []string {
+	var envs []models.EnvironmentVariable
+	if err := database.DB.Find(&envs).Error; err != nil {
+		return nil
+	}
+	return es.formatEnvVars(envs)
+}
+
+// formatEnvVars 将环境变量列表格式化为 NAME=VALUE 数组，并处理重名合并
+func (es *EnvService) formatEnvVars(envs []models.EnvironmentVariable) []string {
+	if len(envs) == 0 {
+		return nil
+	}
+
 	type mergedEnv struct {
 		name   string
 		values []string
@@ -132,12 +158,7 @@ func (es *EnvService) GetEnvVarsByIDs(envIDs string) []string {
 	var mergedList []mergedEnv
 	nameToIndex := make(map[string]int)
 
-	for _, id := range ids {
-		env := es.GetEnvVarByID(id)
-		if env == nil {
-			continue
-		}
-
+	for _, env := range envs {
 		if idx, ok := nameToIndex[env.Name]; ok {
 			mergedList[idx].values = append(mergedList[idx].values, env.Value)
 		} else {

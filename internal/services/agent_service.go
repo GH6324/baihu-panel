@@ -3,6 +3,7 @@ package services
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"github.com/engigu/baihu-panel/internal/constant"
 	"github.com/engigu/baihu-panel/internal/database"
 	"github.com/engigu/baihu-panel/internal/logger"
+	"github.com/engigu/baihu-panel/internal/executor"
 	"github.com/engigu/baihu-panel/internal/models"
 	"github.com/engigu/baihu-panel/internal/services/tasks"
 	"github.com/engigu/baihu-panel/internal/utils"
@@ -310,18 +312,39 @@ func (s *AgentService) GetTasks(agentID string) []models.AgentTask {
 	database.DB.Where("agent_id = ? AND enabled = ?", agentID, true).Find(&tasks)
 
 	result := make([]models.AgentTask, len(tasks))
+	envService := NewEnvService()
+
 	for i, task := range tasks {
-		// 将环境变量 ID 转换为实际的环境变量键值对
-		envVarsStr := s.buildEnvVarsString(task.Envs)
+		// 加载环境配置
+		var envVars []string
+		
+		// 检查全量注入模式
+		allEnvs := false
+		if task.Config != "" {
+			var config models.TaskConfig
+			if err := json.Unmarshal([]byte(task.Config), &config); err == nil {
+				if config.AllEnvs {
+					allEnvs = true
+				}
+			}
+		}
+
+		if allEnvs {
+			envVars = envService.GetAllEnvVars()
+		} else if task.Envs != "" {
+			envVars = envService.GetEnvVarsByIDs(task.Envs)
+		}
+
+		envVarsStr := executor.FormatEnvVars(envVars)
 
 		result[i] = models.AgentTask{
-			ID:        task.ID,
-			Name:      task.Name,
-			Command:   task.Command,
-			Schedule:  task.Schedule,
-			Timeout:   task.Timeout,
-			WorkDir:   task.WorkDir,
-			Envs:        envVarsStr, // 传递 "KEY1=VALUE1,KEY2=VALUE2" 格式
+			ID:          task.ID,
+			Name:        task.Name,
+			Command:     task.Command,
+			Schedule:    task.Schedule,
+			Timeout:     task.Timeout,
+			WorkDir:     task.WorkDir,
+			Envs:        envVarsStr,
 			Languages:   task.Languages,
 			RandomRange: task.RandomRange,
 			Enabled:     task.Enabled,
@@ -331,30 +354,6 @@ func (s *AgentService) GetTasks(agentID string) []models.AgentTask {
 	return result
 }
 
-// buildEnvVarsString 将环境变量 ID 列表转换为键值对字符串
-func (s *AgentService) buildEnvVarsString(envIDs string) string {
-	if envIDs == "" {
-		return ""
-	}
-
-	var envVars []models.EnvironmentVariable
-	ids := strings.Split(envIDs, ",")
-	database.DB.Where("id IN ?", ids).Find(&envVars)
-
-	if len(envVars) == 0 {
-		return ""
-	}
-
-	// 构建 "KEY1=VALUE1,KEY2=VALUE2" 格式
-	pairs := make([]string, 0, len(envVars))
-	for _, env := range envVars {
-		// 对值进行转义，避免特殊字符问题
-		encodedValue := strings.ReplaceAll(env.Value, ",", "{{COMMA}}")
-		encodedValue = strings.ReplaceAll(encodedValue, "=", "{{EQUAL}}")
-		pairs = append(pairs, fmt.Sprintf("%s=%s", env.Name, encodedValue))
-	}
-	return strings.Join(pairs, ",")
-}
 
 // ReportResult Agent 上报执行结果
 func (s *AgentService) ReportResult(result *models.AgentTaskResult) error {

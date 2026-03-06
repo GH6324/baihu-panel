@@ -104,6 +104,7 @@ func (ts *TaskService) UpdateTask(id string, name, command, schedule string, tim
 	task.Enabled = enabled
 	task.AgentID = agentID
 	task.Languages = languages
+	task.Config = config
 	task.RetryCount = retryCount
 	task.RetryInterval = retryInterval
 	task.RandomRange = randomRange

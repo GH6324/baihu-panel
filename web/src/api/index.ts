@@ -319,6 +319,8 @@ export interface Task {
   enabled: boolean
   last_run: string
   next_run: string
+  created_at?: string
+  updated_at?: string
 }
 
 export interface RepoConfig {
