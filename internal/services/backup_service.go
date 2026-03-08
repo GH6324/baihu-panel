@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/engigu/baihu-panel/internal/cache"
 	"github.com/engigu/baihu-panel/internal/constant"
 	"github.com/engigu/baihu-panel/internal/database"
 	"github.com/engigu/baihu-panel/internal/models"
@@ -216,7 +217,7 @@ func (s *BackupService) Restore(zipPath string) error {
 	}
 
 	// 开启全局事务
-	return database.DB.Transaction(func(tx *gorm.DB) error {
+	err = database.DB.Transaction(func(tx *gorm.DB) error {
 		// 1. 清空现有数据（物理删除）
 		tx.Unscoped().Where("1=1").Delete(&models.User{})
 		tx.Unscoped().Where("1=1").Delete(&models.Task{})
@@ -245,6 +246,14 @@ func (s *BackupService) Restore(zipPath string) error {
 
 		return nil
 	})
+
+	if err == nil {
+		// 备份恢复成功后，需要同时刷新内存中的配置缓存以免数据不一致导致异常
+		constant.Secret = s.settingsService.Get(constant.SectionSecurity, constant.KeySecret)
+		cache.LoadSiteCache()
+	}
+
+	return err
 }
 
 func restoreStreamBatch[T any](tx *gorm.DB, decoder *json.Decoder) error {
