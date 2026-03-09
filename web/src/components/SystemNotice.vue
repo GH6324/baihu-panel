@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
-import { api, AppLog, LOG_CATEGORY, LOG_STATUS } from '@/api'
+import { api, type AppLog, LOG_CATEGORY, LOG_STATUS } from '@/api'
 import { toast } from 'vue-sonner'
 import { format } from 'date-fns'
 
