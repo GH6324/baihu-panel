@@ -45,7 +45,7 @@ export PATH="$MISE_DIR/shims:$MISE_DIR/bin:$PATH"
 export NODE_PATH=$(npm root -g 2>/dev/null)
 
 # 默认启用 Python 镜像源
-export PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+export PIP_INDEX_URL=${PIP_INDEX_URL:-https://pypi.org/simple}
 
 # Node 内存限制
 export NODE_OPTIONS="--max-old-space-size=256"

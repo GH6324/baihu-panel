@@ -154,6 +154,93 @@ info:
   title: Baihu Panel API
   version: "1.0"
 paths:
+  /app-logs:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 日志分类
+        in: query
+        name: category
+        type: string
+      - description: 状态
+        in: query
+        name: status
+        type: string
+      - description: 级别
+        in: query
+        name: level
+        type: string
+      - description: 搜索关键词
+        in: query
+        name: keyword
+        type: string
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_engigu_baihu-panel_internal_utils.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取应用日志列表
+      tags:
+      - 应用日志
+  /app-logs/clear:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 请求体
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_engigu_baihu-panel_internal_utils.Response'
+      security:
+      - BearerAuth: []
+      summary: 清理日志
+      tags:
+      - 应用日志
+  /app-logs/read:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 请求体
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_engigu_baihu-panel_internal_utils.Response'
+      security:
+      - BearerAuth: []
+      summary: 标记已读
+      tags:
+      - 应用日志
   /env:
     get:
       consumes:

@@ -82,7 +82,7 @@ export MISE_DATA_DIR="$MISE_DIR"
 export MISE_CONFIG_DIR="$MISE_DIR"
 export PATH="$MISE_DIR/shims:$MISE_DIR/bin:$PATH"
 
-export PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+export PIP_INDEX_URL=${PIP_INDEX_URL:-https://pypi.org/simple}
 
 log "mise version: $(mise --version 2>/dev/null | head -n 1)"
 log "python: $(python --version 2>&1 | head -n 1) at $(which python)"
