@@ -127,16 +127,6 @@ func (lc *LogController) GetLogDetail(c *gin.Context) {
 }
 
 // ClearLogs 清空日志
-// @Summary 清空日志
-// @Description 清空所有日志或指定任务的日志
-// @Tags 日志
-// @Accept json
-// @Produce json
-// @Security ApiKeyAuth
-// @Param body body object false "清空范围信息"
-// @Success 200 {object} utils.Response
-// @Failure 500 {object} utils.Response
-// @Router /logs/clear [post]
 func (lc *LogController) ClearLogs(c *gin.Context) {
 	var req struct {
 		TaskID *string `json:"task_id"`
@@ -163,16 +153,6 @@ func (lc *LogController) ClearLogs(c *gin.Context) {
 }
 
 // DeleteLog 删除日志
-// @Summary 删除日志
-// @Description 根据 ID 删除单条任务日志
-// @Tags 日志
-// @Accept json
-// @Produce json
-// @Security ApiKeyAuth
-// @Param id path string true "日志ID"
-// @Success 200 {object} utils.Response
-// @Failure 500 {object} utils.Response
-// @Router /logs/{id} [delete]
 func (lc *LogController) DeleteLog(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {

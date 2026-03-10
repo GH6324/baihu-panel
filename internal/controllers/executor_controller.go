@@ -55,16 +55,6 @@ func (ec *ExecutorController) ExecuteTask(c *gin.Context) {
 }
 
 // ExecuteCommand 执行命令
-// @Summary 执行命令
-// @Description 临时执行单次命令
-// @Tags 任务执行
-// @Accept json
-// @Produce json
-// @Security ApiKeyAuth
-// @Param body body object true "命令内容 (需包含 command 字段)"
-// @Success 200 {object} utils.Response{data=vo.ExecutionResultVO}
-// @Failure 400 {object} utils.Response
-// @Router /execute/command [post]
 func (ec *ExecutorController) ExecuteCommand(c *gin.Context) {
 	var req struct {
 		Command string `json:"command" binding:"required"`

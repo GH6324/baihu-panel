@@ -154,93 +154,6 @@ info:
   title: Baihu Panel API
   version: "1.0"
 paths:
-  /app-logs:
-    get:
-      consumes:
-      - application/json
-      parameters:
-      - description: 日志分类
-        in: query
-        name: category
-        type: string
-      - description: 状态
-        in: query
-        name: status
-        type: string
-      - description: 级别
-        in: query
-        name: level
-        type: string
-      - description: 搜索关键词
-        in: query
-        name: keyword
-        type: string
-      - description: 页码
-        in: query
-        name: page
-        type: integer
-      - description: 每页数量
-        in: query
-        name: page_size
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/github_com_engigu_baihu-panel_internal_utils.Response'
-      security:
-      - BearerAuth: []
-      summary: 获取应用日志列表
-      tags:
-      - 应用日志
-  /app-logs/clear:
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: 请求体
-        in: body
-        name: body
-        required: true
-        schema:
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/github_com_engigu_baihu-panel_internal_utils.Response'
-      security:
-      - BearerAuth: []
-      summary: 清理日志
-      tags:
-      - 应用日志
-  /app-logs/read:
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: 请求体
-        in: body
-        name: body
-        required: true
-        schema:
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/github_com_engigu_baihu-panel_internal_utils.Response'
-      security:
-      - BearerAuth: []
-      summary: 标记已读
-      tags:
-      - 应用日志
   /env:
     get:
       consumes:
@@ -283,76 +196,7 @@ paths:
       summary: 获取环境变量列表
       tags:
       - 环境变量
-    post:
-      consumes:
-      - application/json
-      description: 创建新的环境变量
-      parameters:
-      - description: 环境变量信息
-        in: body
-        name: body
-        required: true
-        schema:
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/github_com_engigu_baihu-panel_internal_utils.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/vo.EnvVO'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/github_com_engigu_baihu-panel_internal_utils.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: 创建环境变量
-      tags:
-      - 环境变量
   /env/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: 根据 ID 删除环境变量，支持强制删除
-      parameters:
-      - description: 环境变量ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: 是否强制删除
-        in: query
-        name: force
-        type: boolean
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/github_com_engigu_baihu-panel_internal_utils.Response'
-        "409":
-          description: 引用冲突
-          schema:
-            allOf:
-            - $ref: '#/definitions/github_com_engigu_baihu-panel_internal_utils.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/vo.TaskVO'
-                  type: array
-              type: object
-      security:
-      - ApiKeyAuth: []
-      summary: 删除环境变量
-      tags:
-      - 环境变量
     get:
       consumes:
       - application/json
@@ -382,43 +226,6 @@ paths:
       security:
       - BearerAuth: []
       summary: 获取环境变量详情
-      tags:
-      - 环境变量
-    put:
-      consumes:
-      - application/json
-      description: 根据 ID 更新环境变量信息
-      parameters:
-      - description: 环境变量ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: 更新信息
-        in: body
-        name: body
-        required: true
-        schema:
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/github_com_engigu_baihu-panel_internal_utils.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/vo.EnvVO'
-              type: object
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/github_com_engigu_baihu-panel_internal_utils.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: 更新环境变量
       tags:
       - 环境变量
   /env/{id}/tasks:
@@ -475,39 +282,6 @@ paths:
       summary: 获取所有环境变量
       tags:
       - 环境变量
-  /execute/command:
-    post:
-      consumes:
-      - application/json
-      description: 临时执行单次命令
-      parameters:
-      - description: 命令内容 (需包含 command 字段)
-        in: body
-        name: body
-        required: true
-        schema:
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/github_com_engigu_baihu-panel_internal_utils.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/vo.ExecutionResultVO'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/github_com_engigu_baihu-panel_internal_utils.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: 执行命令
-      tags:
-      - 任务执行
   /execute/results:
     get:
       consumes:
@@ -625,32 +399,6 @@ paths:
       tags:
       - 日志管理
   /logs/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: 根据 ID 删除单条任务日志
-      parameters:
-      - description: 日志ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/github_com_engigu_baihu-panel_internal_utils.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/github_com_engigu_baihu-panel_internal_utils.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: 删除日志
-      tags:
-      - 日志
     get:
       consumes:
       - application/json
@@ -682,33 +430,6 @@ paths:
       summary: 获取日志详情
       tags:
       - 日志管理
-  /logs/clear:
-    post:
-      consumes:
-      - application/json
-      description: 清空所有日志或指定任务的日志
-      parameters:
-      - description: 清空范围信息
-        in: body
-        name: body
-        schema:
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/github_com_engigu_baihu-panel_internal_utils.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/github_com_engigu_baihu-panel_internal_utils.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: 清空日志
-      tags:
-      - 日志
   /tasks:
     get:
       consumes:

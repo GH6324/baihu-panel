@@ -18,19 +18,6 @@ func NewAppLogController() *AppLogController {
 }
 
 // GetLogs 获取应用日志列表
-// @Summary 获取应用日志列表
-// @Tags 应用日志
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param category query string false "日志分类"
-// @Param status query string false "状态"
-// @Param level query string false "级别"
-// @Param keyword query string false "搜索关键词"
-// @Param page query int false "页码"
-// @Param page_size query int false "每页数量"
-// @Success 200 {object} utils.Response
-// @Router /app-logs [get]
 func (ac *AppLogController) GetLogs(c *gin.Context) {
 	p := utils.ParsePagination(c)
 	category := c.Query("category")
@@ -47,14 +34,6 @@ func (ac *AppLogController) GetLogs(c *gin.Context) {
 }
 
 // MarkAsRead 标记已读
-// @Summary 标记已读
-// @Tags 应用日志
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param body body object true "请求体"
-// @Success 200 {object} utils.Response
-// @Router /app-logs/read [post]
 func (ac *AppLogController) MarkAsRead(c *gin.Context) {
 	var req struct {
 		ID       string `json:"id"`
@@ -83,14 +62,6 @@ func (ac *AppLogController) MarkAsRead(c *gin.Context) {
 }
 
 // ClearLogs 清理日志
-// @Summary 清理日志
-// @Tags 应用日志
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param body body object true "请求体"
-// @Success 200 {object} utils.Response
-// @Router /app-logs/clear [post]
 func (ac *AppLogController) ClearLogs(c *gin.Context) {
 	var req struct {
 		Category string `json:"category"`
