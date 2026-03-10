@@ -141,12 +141,12 @@ func (sc *SettingsController) UpdateSiteSettings(c *gin.Context) {
 		OpenapiEnabled       bool   `json:"openapi_enabled"`
 		OpenapiToken         string `json:"openapi_token"`
 		OpenapiTokenExpire   string `json:"openapi_token_expire"`
-		SystemNoticeDays     int    `json:"system_notice_days"`
-		SystemNoticeMaxCount int    `json:"system_notice_max_count"`
-		PushLogDays          int    `json:"push_log_days"`
-		PushLogMaxCount      int    `json:"push_log_max_count"`
-		LoginLogDays         int    `json:"login_log_days"`
-		LoginLogMaxCount     int    `json:"login_log_max_count"`
+		SystemNoticeDays     string `json:"system_notice_days"`
+		SystemNoticeMaxCount string `json:"system_notice_max_count"`
+		PushLogDays          string `json:"push_log_days"`
+		PushLogMaxCount      string `json:"push_log_max_count"`
+		LoginLogDays         string `json:"login_log_days"`
+		LoginLogMaxCount     string `json:"login_log_max_count"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -181,12 +181,12 @@ func (sc *SettingsController) UpdateSiteSettings(c *gin.Context) {
 	}
 
 	// 保存日志清理配置
-	sc.settingsService.Set(constant.SectionSystem, constant.KeySystemNoticeDays, fmt.Sprintf("%d", req.SystemNoticeDays))
-	sc.settingsService.Set(constant.SectionSystem, constant.KeySystemNoticeMaxCount, fmt.Sprintf("%d", req.SystemNoticeMaxCount))
-	sc.settingsService.Set(constant.SectionSystem, constant.KeyPushLogDays, fmt.Sprintf("%d", req.PushLogDays))
-	sc.settingsService.Set(constant.SectionSystem, constant.KeyPushLogMaxCount, fmt.Sprintf("%d", req.PushLogMaxCount))
-	sc.settingsService.Set(constant.SectionSystem, constant.KeyLoginLogDays, fmt.Sprintf("%d", req.LoginLogDays))
-	sc.settingsService.Set(constant.SectionSystem, constant.KeyLoginLogMaxCount, fmt.Sprintf("%d", req.LoginLogMaxCount))
+	sc.settingsService.Set(constant.SectionSystem, constant.KeySystemNoticeDays, req.SystemNoticeDays)
+	sc.settingsService.Set(constant.SectionSystem, constant.KeySystemNoticeMaxCount, req.SystemNoticeMaxCount)
+	sc.settingsService.Set(constant.SectionSystem, constant.KeyPushLogDays, req.PushLogDays)
+	sc.settingsService.Set(constant.SectionSystem, constant.KeyPushLogMaxCount, req.PushLogMaxCount)
+	sc.settingsService.Set(constant.SectionSystem, constant.KeyLoginLogDays, req.LoginLogDays)
+	sc.settingsService.Set(constant.SectionSystem, constant.KeyLoginLogMaxCount, req.LoginLogMaxCount)
 
 	utils.SuccessMsg(c, "保存成功")
 }
