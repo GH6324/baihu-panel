@@ -150,6 +150,12 @@ function formatDate(dateStr: string) {
   }
 }
 
+import { ansiToHtml } from '@/utils/ansi'
+
+const renderedContent = computed(() => {
+  return ansiToHtml(detailDialogProps.value.content)
+})
+
 function onDialogClose(open: boolean) {
   if (!open) {
     selectedLogId.value = null
@@ -291,8 +297,7 @@ function onDialogClose(open: boolean) {
             </div>
             <div class="p-6">
               <div v-if="detailDialogProps.content"
-                class="text-sm text-foreground bg-muted/20 p-5 rounded-xl border border-border/50 whitespace-pre-wrap break-all leading-relaxed shadow-sm">
-                {{ detailDialogProps.content }}
+                class="text-sm text-foreground bg-muted/20 p-5 rounded-xl border border-border/50 whitespace-pre-wrap break-all leading-relaxed shadow-sm" v-html="renderedContent">
               </div>
               <div v-else class="text-sm text-muted-foreground italic py-2">无推送内容</div>
             </div>

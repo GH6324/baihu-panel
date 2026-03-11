@@ -17,14 +17,12 @@ const emit = defineEmits<{
 
 const searchKeyword = ref('')
 
-// 高亮搜索结果
-const highlightedContent = computed(() => {
-  if (!searchKeyword.value.trim()) return props.content
+import { ansiToHtml, highlightHtml } from '@/utils/ansi'
 
-  const keyword = searchKeyword.value.trim()
-  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const regex = new RegExp(`(${escaped})`, 'gi')
-  return props.content.replace(regex, '<mark class="bg-yellow-300 text-black">$1</mark>')
+// 高亮搜索结果并处理 ANSI 颜色
+const highlightedContent = computed(() => {
+  const html = ansiToHtml(props.content)
+  return highlightHtml(html, searchKeyword.value)
 })
 
 function close() {

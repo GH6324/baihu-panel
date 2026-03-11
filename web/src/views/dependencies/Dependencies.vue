@@ -133,6 +133,12 @@ async function uninstallPackage() {
   }
 }
 
+import { ansiToHtml } from '@/utils/ansi'
+
+const renderedLog = computed(() => {
+  return ansiToHtml(logContent.value)
+})
+
 function showLog(dep: Dependency) {
   logPkgName.value = dep.name
   logContent.value = dep.log || '暂无日志'
@@ -357,7 +363,7 @@ onMounted(async () => {
             <DialogDescription class="sr-only">查看依赖包的详细安装输出日志</DialogDescription>
           </DialogHeader>
           <div class="max-h-[400px] overflow-y-auto">
-            <pre class="text-xs bg-muted p-3 rounded-lg whitespace-pre-wrap break-all font-mono">{{ logContent }}</pre>
+            <pre class="text-xs bg-muted p-3 rounded-lg whitespace-pre-wrap break-all font-mono" v-html="renderedLog"></pre>
           </div>
           <DialogFooter>
             <Button variant="outline" @click="showLogDialog = false">关闭</Button>

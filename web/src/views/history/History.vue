@@ -56,8 +56,14 @@ const isWsLoading = ref(false)
 let logSocket: WebSocket | null = null
 
 
+import { ansiToHtml } from '@/utils/ansi'
+
 const decompressedOutput = computed(() => {
   return wsContent.value || '无输出'
+})
+
+const renderedOutput = computed(() => {
+  return ansiToHtml(decompressedOutput.value)
 })
 
 async function loadLogs() {
@@ -566,7 +572,7 @@ watch(() => route.query, (newQuery) => {
           </div>
           <div class="flex-1 overflow-auto bg-muted/5 min-h-[160px]">
             <pre
-              class="p-4 text-xs font-mono whitespace-pre-wrap break-all log-pre leading-relaxed">{{ decompressedOutput }}</pre>
+              class="p-4 text-xs font-mono whitespace-pre-wrap break-all log-pre leading-relaxed" v-html="renderedOutput"></pre>
             <div v-if="isWsLoading" class="p-4 text-sm text-muted-foreground italic">连接中...</div>
           </div>
         </div>
