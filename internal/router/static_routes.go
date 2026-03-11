@@ -1,7 +1,6 @@
 package router
 
 import (
-	"bytes"
 	"compress/gzip"
 	"io"
 	"io/fs"
@@ -31,46 +30,37 @@ func initStaticRoutes(root *gin.RouterGroup) {
 
 	// 专门处理 /assets 目录下的资源
 	root.GET("/assets/*filepath", cacheControl("public, max-age=31536000, immutable"), func(ctx *gin.Context) {
-		// 获取相对路径，例如 "assets/chunk-123.js"
 		fullPath := "assets" + ctx.Param("filepath")
 		fullPath = strings.TrimPrefix(fullPath, "/")
 
-		// 1. 检查浏览器是否支持 gzip
 		isGzipSupported := strings.Contains(ctx.GetHeader("Accept-Encoding"), "gzip")
-
-		// 2. 构造压缩路径
 		gzPath := fullPath + ".gz"
 
-		// 3. 确定 MIME 类型 (优先硬编码常用类型，防止 Windows 注册表错误)
+		// 确定 MIME 类型
 		ext := filepath.Ext(fullPath)
 		contentType := mime.TypeByExtension(ext)
 		if contentType == "" {
 			switch ext {
-			case ".js":
-				contentType = "application/javascript"
-			case ".css":
-				contentType = "text/css"
-			case ".svg":
-				contentType = "image/svg+xml"
-			case ".json":
-				contentType = "application/json"
-			case ".wasm":
-				contentType = "application/wasm"
-			default:
-				contentType = "application/octet-stream"
+			case ".js": contentType = "application/javascript"
+			case ".css": contentType = "text/css"
+			case ".svg": contentType = "image/svg+xml"
+			default: contentType = "application/octet-stream"
 			}
 		}
 
-		// 4. 发送逻辑
-		// 优先尝试发送 .gz 版本
-		if gzData, err := fs.ReadFile(staticFS, gzPath); err == nil {
+		// 优先尝试读取 .gz 文件
+		if gzFile, err := staticFS.Open(gzPath); err == nil {
+			defer gzFile.Close()
 			ctx.Header("Content-Type", contentType)
+			
 			if isGzipSupported {
+				// 极致性能：流式透传压缩包 (RSS 占用极低)
 				ctx.Header("Content-Encoding", "gzip")
-				ctx.Data(http.StatusOK, contentType, gzData)
+				ctx.Status(http.StatusOK)
+				io.Copy(ctx.Writer, gzFile)
 			} else {
-				// 客户端不支持 Gzip，解压后返回
-				gr, _ := gzip.NewReader(bytes.NewReader(gzData))
+				// 兼容处理：流式解压发送
+				gr, _ := gzip.NewReader(gzFile)
 				defer gr.Close()
 				ctx.Status(http.StatusOK)
 				io.Copy(ctx.Writer, gr)
@@ -78,17 +68,19 @@ func initStaticRoutes(root *gin.RouterGroup) {
 			return
 		}
 
-		// 如果没有 .gz，尝试发送原文件
-		if data, err := fs.ReadFile(staticFS, fullPath); err == nil {
-			ctx.Data(http.StatusOK, contentType, data)
+		// 如果没有 .gz，流式读取原文件
+		if file, err := staticFS.Open(fullPath); err == nil {
+			defer file.Close()
+			ctx.Header("Content-Type", contentType)
+			ctx.Status(http.StatusOK)
+			io.Copy(ctx.Writer, file)
 			return
 		}
 
-		// 都没找到
-		ctx.Status(http.StatusNotFound)
+		ctx.Status(404)
 	})
 
-	// logo.svg 处理
+	// logo.svg 等单文件处理
 	root.GET("/logo.svg", func(ctx *gin.Context) {
 		serveSingleFile(ctx, "logo.svg", "image/svg+xml", "public, max-age=86400")
 	})
@@ -101,30 +93,32 @@ func serveSingleFile(ctx *gin.Context, filename string, contentType string, cach
 		return
 	}
 
-	if cache != "" {
-		ctx.Header("Cache-Control", cache)
-	}
+	if cache != "" { ctx.Header("Cache-Control", cache) }
+	ctx.Header("Content-Type", contentType)
 
 	isGzipSupported := strings.Contains(ctx.GetHeader("Accept-Encoding"), "gzip")
 
-	// 尝试压缩版
-	if gzData, err := fs.ReadFile(staticFS, filename+".gz"); err == nil {
-		ctx.Header("Content-Type", contentType)
+	// 尝试流式发送压缩版
+	if gzFile, err := staticFS.Open(filename + ".gz"); err == nil {
+		defer gzFile.Close()
 		if isGzipSupported {
 			ctx.Header("Content-Encoding", "gzip")
-			ctx.Data(http.StatusOK, contentType, gzData)
+			ctx.Status(200)
+			io.Copy(ctx.Writer, gzFile)
 		} else {
-			gr, _ := gzip.NewReader(bytes.NewReader(gzData))
+			gr, _ := gzip.NewReader(gzFile)
 			defer gr.Close()
-			ctx.Status(http.StatusOK)
+			ctx.Status(200)
 			io.Copy(ctx.Writer, gr)
 		}
 		return
 	}
 
-	// 尝试原版
-	if data, err := fs.ReadFile(staticFS, filename); err == nil {
-		ctx.Data(http.StatusOK, contentType, data)
+	// 尝试流式发送原版
+	if file, err := staticFS.Open(filename); err == nil {
+		defer file.Close()
+		ctx.Status(200)
+		io.Copy(ctx.Writer, file)
 		return
 	}
 
@@ -135,30 +129,30 @@ func serveSingleFile(ctx *gin.Context, filename string, contentType string, cach
 func serveSPA(ctx *gin.Context, urlPrefix string, status int) {
 	staticFS := static.GetFS()
 	if staticFS == nil {
-		serveFallback(ctx, urlPrefix, status)
+		ctx.String(status, "Frontend assets not found.")
 		return
 	}
 
 	var data []byte
-	// 尝试读取并解压为字符串以便注入配置
-	if gzData, err := fs.ReadFile(staticFS, "index.html.gz"); err == nil {
-		gr, _ := gzip.NewReader(bytes.NewReader(gzData))
+	// index.html 较小且需要修改字符串，可以一次性读入内存
+	if gzFile, err := staticFS.Open("index.html.gz"); err == nil {
+		defer gzFile.Close()
+		gr, _ := gzip.NewReader(gzFile)
 		data, _ = io.ReadAll(gr)
 		gr.Close()
-	} else if rawData, err := fs.ReadFile(staticFS, "index.html"); err == nil {
-		data = rawData
+	} else if file, err := staticFS.Open("index.html"); err == nil {
+		defer file.Close()
+		data, _ = io.ReadAll(file)
 	}
 
 	if data == nil {
-		serveFallback(ctx, urlPrefix, status)
+		ctx.String(status, "index.html not found.")
 		return
 	}
 
 	html := string(data)
 	baseHref := urlPrefix + "/"
 	if urlPrefix == "" { baseHref = "/" }
-	
-	// 注入 Base 和 Config
 	html = strings.Replace(html, "<head>", "<head>\n    <base href=\""+baseHref+"\">", 1)
 	configScript := `<script>window.__BASE_URL__ = "` + urlPrefix + `"; window.__API_VERSION__ = "/api/v1";</script>`
 	html = strings.Replace(html, "</head>", configScript+"</head>", 1)
@@ -166,9 +160,4 @@ func serveSPA(ctx *gin.Context, urlPrefix string, status int) {
 	ctx.Header("Content-Type", "text/html; charset=utf-8")
 	ctx.Header("Cache-Control", "no-cache, no-store, must-revalidate")
 	ctx.Data(status, "text/html; charset=utf-8", []byte(html))
-}
-
-func serveFallback(ctx *gin.Context, urlPrefix string, status int) {
-	ctx.Header("Content-Type", "text/html; charset=utf-8")
-	ctx.String(status, "Frontend assets not found. Please run 'npm run build'.")
 }

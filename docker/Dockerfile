@@ -64,7 +64,7 @@ RUN go run github.com/swaggo/swag/cmd/swag@latest init -g main.go -o ./openapi_d
 RUN VERSION_VAL=$(cat /build-info/version.txt) && \
     BUILD_TIME_VAL=$(cat /build-info/build_time.txt) && \
     CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -tags web -ldflags="-s -w -X github.com/engigu/baihu-panel/internal/constant.Version=${VERSION_VAL} -X 'github.com/engigu/baihu-panel/internal/constant.BuildTime=${BUILD_TIME_VAL}'" \
+    go build -ldflags="-s -w -X github.com/engigu/baihu-panel/internal/constant.Version=${VERSION_VAL} -X 'github.com/engigu/baihu-panel/internal/constant.BuildTime=${BUILD_TIME_VAL}'" \
     -o baihu .
 
 # ================================
@@ -133,6 +133,9 @@ WORKDIR /app
 
 # Copy Go binary
 COPY --from=backend-builder /app/baihu .
+
+# Copy frontend assets to /www/baihu (No embed in Docker)
+COPY --from=frontend-builder /app/web/dist /www/baihu
 
 # Copy configs and entrypoint
 COPY --from=backend-builder /app/configs ./configs
