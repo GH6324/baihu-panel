@@ -132,7 +132,7 @@ onMounted(loadData)
     
     <div class="space-y-6">
       <!-- 基础设置展示 -->
-      <div class="grid gap-4 p-4 rounded-lg border border-border/60 bg-card/50">
+      <div class="grid gap-4 py-2">
         <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
           <Label class="sm:text-right font-medium">新账户名</Label>
           <Input v-model="username" placeholder="输入新的登录账号" class="sm:col-span-3" :disabled="demoMode" />
