@@ -30,8 +30,18 @@ func Migrate() error {
 		&models.NotifyBinding{},
 	}
 
+	// 检查环境变量表中是否已存在 enabled 列
+	hasEnabled := DB.Migrator().HasColumn(&models.EnvironmentVariable{}, "enabled")
 	if err := AutoMigrate(allModels...); err != nil {
 		return err
+	}
+
+	// 如果原来没有 enabled 列，说明是平滑升级，将现有的环境变量默认设置为启用
+	if !hasEnabled {
+		logger.Infof("[Database] 为现有环境变量初始化启用状态...")
+		if err := DB.Model(&models.EnvironmentVariable{}).Where("1=1").Update("enabled", true).Error; err != nil {
+			logger.Errorf("[Database] 初始化环境变量启用状态失败: %v", err)
+		}
 	}
 
 	return nil

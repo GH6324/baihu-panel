@@ -36,6 +36,7 @@ type EnvVO struct {
 	Value     string           `json:"value"`
 	Remark    string           `json:"remark"`
 	Hidden    bool             `json:"hidden"`
+	Enabled   bool             `json:"enabled"`
 	CreatedAt models.LocalTime `json:"created_at"`
 	UpdatedAt models.LocalTime `json:"updated_at"`
 }
@@ -51,6 +52,7 @@ func ToEnvVO(env *models.EnvironmentVariable) *EnvVO {
 		Value:     string(env.Value),
 		Remark:    env.Remark,
 		Hidden:    env.Hidden,
+		Enabled:   env.Enabled,
 		CreatedAt: env.CreatedAt,
 		UpdatedAt: env.UpdatedAt,
 	}

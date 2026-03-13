@@ -16,13 +16,14 @@ func NewEnvService() *EnvService {
 	return &EnvService{}
 }
 
-func (es *EnvService) CreateEnvVar(name, value, remark string, hidden bool, userID string) *models.EnvironmentVariable {
+func (es *EnvService) CreateEnvVar(name, value, remark string, hidden, enabled bool, userID string) *models.EnvironmentVariable {
 	env := &models.EnvironmentVariable{
 		ID:        utils.GenerateID(),
 		Name:      name,
 		Value:     models.BigText(value),
 		Remark:    remark,
 		Hidden:    hidden,
+		Enabled:   enabled,
 		UserID:    userID,
 		CreatedAt: models.Now(),
 		UpdatedAt: models.Now(),
@@ -65,16 +66,17 @@ func (es *EnvService) GetEnvVarByID(id string) *models.EnvironmentVariable {
 	return &env
 }
 
-func (es *EnvService) UpdateEnvVar(id string, name, value, remark string, hidden bool) *models.EnvironmentVariable {
+func (es *EnvService) UpdateEnvVar(id string, name, value, remark string, hidden, enabled bool) *models.EnvironmentVariable {
 	var env models.EnvironmentVariable
 	if err := database.DB.Where("id = ?", id).First(&env).Error; err != nil {
 		return nil
 	}
 	updates := map[string]interface{}{
-		"name":   name,
-		"value":  models.BigText(value),
-		"remark": remark,
-		"hidden": hidden,
+		"name":    name,
+		"value":   models.BigText(value),
+		"remark":  remark,
+		"hidden":  hidden,
+		"enabled": enabled,
 	}
 	database.DB.Model(&env).Updates(updates)
 	return &env
@@ -165,13 +167,18 @@ func (es *EnvService) formatEnvVars(envs []models.EnvironmentVariable) []string 
 	nameToIndex := make(map[string]int)
 
 	for _, env := range envs {
+		value := string(env.Value)
+		if !env.Enabled {
+			value = ""
+		}
+
 		if idx, ok := nameToIndex[env.Name]; ok {
-			mergedList[idx].values = append(mergedList[idx].values, string(env.Value))
+			mergedList[idx].values = append(mergedList[idx].values, value)
 		} else {
 			nameToIndex[env.Name] = len(mergedList)
 			mergedList = append(mergedList, mergedEnv{
 				name:   env.Name,
-				values: []string{string(env.Value)},
+				values: []string{value},
 			})
 		}
 	}

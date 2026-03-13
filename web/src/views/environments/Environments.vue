@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import Pagination from '@/components/Pagination.vue'
-import { Plus, Pencil, Trash2, Eye, EyeOff, Search, AlertTriangle, Terminal } from 'lucide-vue-next'
+import { Plus, Pencil, Trash2, Eye, EyeOff, Search, AlertTriangle, Terminal, Zap, ZapOff } from 'lucide-vue-next'
 import TextOverflow from '@/components/TextOverflow.vue'
 import { api, type EnvVar } from '@/api'
 import { toast } from 'vue-sonner'
@@ -61,7 +61,7 @@ function handlePageChange(page: number) {
 }
 
 function openCreate() {
-  editingEnv.value = { name: '', value: '', remark: '', hidden: true }
+  editingEnv.value = { name: '', value: '', remark: '', hidden: true, enabled: true }
   isEdit.value = false
   showDialog.value = true
 }
@@ -133,6 +133,16 @@ function toggleShow(id: string) {
   showValues.value[id] = !showValues.value[id]
 }
 
+async function toggleEnabled(env: EnvVar) {
+  try {
+    await api.env.update(env.id, { ...env, enabled: !env.enabled })
+    env.enabled = !env.enabled
+    toast.success(env.enabled ? '变量已启用' : '变量已禁用')
+  } catch {
+    toast.error('操作失败')
+  }
+}
+
 function maskValue(value: string) {
   return '•'.repeat(Math.min(value.length, 20))
 }
@@ -166,7 +176,7 @@ onMounted(loadEnvVars)
         <span class="w-32 sm:w-48 shrink-0">变量名</span>
         <span class="w-24 sm:flex-1 shrink-0 sm:shrink">值</span>
         <span class="w-32 sm:w-48 shrink-0 hidden md:block">备注</span>
-        <span class="w-20 sm:w-24 shrink-0 text-center">操作</span>
+        <span class="w-28 sm:w-36 shrink-0 text-center">操作</span>
       </div>
       <!-- 列表 -->
       <div class="divide-y min-w-[500px]">
@@ -183,7 +193,13 @@ onMounted(loadEnvVars)
           <span class="w-32 sm:w-48 shrink-0 text-muted-foreground truncate text-sm hidden md:block">
             <TextOverflow :text="env.remark || '-'" title="备注" />
           </span>
-          <span class="w-20 sm:w-24 shrink-0 flex justify-center gap-1">
+          <span class="w-28 sm:w-36 shrink-0 flex justify-center gap-1">
+            <Button variant="ghost" size="icon" class="h-7 w-7 rounded-md transition-all"
+              :class="env.enabled ? 'text-green-500 bg-green-500/10 hover:bg-green-500/20' : 'text-muted-foreground bg-muted/50 hover:bg-muted'"
+              @click="toggleEnabled(env)" :title="env.enabled ? '已启用（点击禁用）' : '已禁用（点击启用）'">
+              <Zap v-if="env.enabled" class="h-3.5 w-3.5 fill-current" />
+              <ZapOff v-else class="h-3.5 w-3.5" />
+            </Button>
             <Button variant="ghost" size="icon" class="h-7 w-7" @click="toggleShow(env.id)"
               :title="showValues[env.id] ? '隐藏' : '显示'">
               <Eye v-if="!showValues[env.id]" class="h-3.5 w-3.5" />
@@ -224,6 +240,10 @@ onMounted(loadEnvVars)
           <div class="flex items-center justify-between space-x-2 pt-2">
             <Label class="text-sm font-medium">隐藏变量值</Label>
             <Switch v-model="editingEnv.hidden" />
+          </div>
+          <div class="flex items-center justify-between space-x-2">
+            <Label class="text-sm font-medium">启用变量</Label>
+            <Switch v-model="editingEnv.enabled" />
           </div>
         </div>
         <DialogFooter>

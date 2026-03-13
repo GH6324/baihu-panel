@@ -35,6 +35,7 @@ func (ec *EnvController) CreateEnvVar(c *gin.Context) {
 		Value  string `json:"value" binding:"required"`
 		Remark string `json:"remark"`
 		Hidden *bool  `json:"hidden"`
+		Enabled *bool  `json:"enabled"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -47,7 +48,12 @@ func (ec *EnvController) CreateEnvVar(c *gin.Context) {
 		hidden = *req.Hidden
 	}
 
-	envVar := ec.envService.CreateEnvVar(req.Name, req.Value, req.Remark, hidden, userID)
+	enabled := true
+	if req.Enabled != nil {
+		enabled = *req.Enabled
+	}
+
+	envVar := ec.envService.CreateEnvVar(req.Name, req.Value, req.Remark, hidden, enabled, userID)
 	utils.Success(c, vo.ToEnvVO(envVar))
 }
 
@@ -133,10 +139,11 @@ func (ec *EnvController) UpdateEnvVar(c *gin.Context) {
 	}
 
 	var req struct {
-		Name   string `json:"name"`
-		Value  string `json:"value"`
-		Remark string `json:"remark"`
-		Hidden *bool  `json:"hidden"`
+		Name    string `json:"name"`
+		Value   string `json:"value"`
+		Remark  string `json:"remark"`
+		Hidden  *bool  `json:"hidden"`
+		Enabled *bool  `json:"enabled"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -155,7 +162,13 @@ func (ec *EnvController) UpdateEnvVar(c *gin.Context) {
 	if req.Hidden != nil {
 		hidden = *req.Hidden
 	}
-	envVar := ec.envService.UpdateEnvVar(id, req.Name, req.Value, req.Remark, hidden)
+
+	enabled := existing.Enabled
+	if req.Enabled != nil {
+		enabled = *req.Enabled
+	}
+
+	envVar := ec.envService.UpdateEnvVar(id, req.Name, req.Value, req.Remark, hidden, enabled)
 	if envVar == nil {
 		utils.NotFound(c, "环境变量不存在")
 		return
