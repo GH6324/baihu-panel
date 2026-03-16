@@ -326,7 +326,6 @@ function addEnv(id: string) {
   if (!selectedEnvIds.value.includes(id)) {
     selectedEnvIds.value.push(id)
   }
-  envSearchQuery.value = ''
 }
 
 function removeEnv(id: string) {
@@ -664,7 +663,7 @@ async function save() {
                           <Search class="h-8 w-8 opacity-10" />
                           未找到可用变量
                         </div>
-                        <div v-for="env in filteredEnvVars" :key="env.id" @click="addEnv(env.id)"
+                        <div v-for="env in filteredEnvVars" :key="env.id" @click.stop="addEnv(env.id)"
                           class="flex flex-col p-3 rounded-lg hover:bg-primary/5 cursor-pointer transition-all border border-transparent hover:border-primary/10 mb-1 group">
                           <div class="flex items-center justify-between mb-1">
                             <span class="text-sm font-mono font-bold tracking-tight group-hover:text-primary transition-colors">{{ env.name }}</span>
