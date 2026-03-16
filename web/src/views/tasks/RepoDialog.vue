@@ -54,6 +54,7 @@ const repoConfig = ref<RepoConfig>({
   single_file: false,
   proxy_url: '',
   auth_token: '',
+  whitelist_paths: '',
   concurrency: 1,
   proxy: ''
 })
@@ -62,6 +63,7 @@ const cleanKeep = ref(30)
 const allAgents = ref<Agent[]>([])
 const selectedAgentId = ref<string>('local')
 const tagInput = ref('')
+const whitelistInput = ref('')
 
 function addTag() {
   const val = tagInput.value.trim()
@@ -77,6 +79,22 @@ function addTag() {
 function removeTag(tagToRemove: string) {
   const currentTags = form.value.tags ? form.value.tags.split(',').filter(Boolean) : []
   form.value.tags = currentTags.filter(t => t !== tagToRemove).join(',')
+}
+
+function addWhitelistPath() {
+  const val = whitelistInput.value.trim()
+  if (!val) return
+  const current = repoConfig.value.whitelist_paths ? repoConfig.value.whitelist_paths.split(',').filter(Boolean) : []
+  if (!current.includes(val)) {
+    current.push(val)
+    repoConfig.value.whitelist_paths = current.join(',')
+  }
+  whitelistInput.value = ''
+}
+
+function removeWhitelistPath(path: string) {
+  const current = repoConfig.value.whitelist_paths ? repoConfig.value.whitelist_paths.split(',').filter(Boolean) : []
+  repoConfig.value.whitelist_paths = current.filter(p => p !== path).join(',')
 }
 
 const concurrencyEnabled = computed({
@@ -137,6 +155,7 @@ watch(() => props.open, async (val) => {
       proxy: 'none',
       proxy_url: '',
       auth_token: '',
+      whitelist_paths: '',
       concurrency: 1
     }
     const configStr = props.task?.config
@@ -298,6 +317,35 @@ async function save() {
                     <DirTreeSelect v-if="selectedAgentId === 'local'" :model-value="repoConfig.target_path || ''"
                       @update:model-value="v => repoConfig.target_path = v" class="h-9" />
                     <Input v-else v-model="repoConfig.target_path" placeholder="Agent 上的目标路径" class="h-9 bg-muted/30 border-muted-foreground/20" />
+                  </div>
+                </div>
+                
+                <!-- 新增：白名单路径 -->
+                <div class="grid grid-cols-1 sm:grid-cols-4 items-start gap-3">
+                  <Label class="sm:text-right text-xs text-muted-foreground uppercase tracking-wider pt-2.5">
+                    白名单路径
+                  </Label>
+                  <div class="sm:col-span-3 space-y-2">
+                    <div class="flex gap-2">
+                      <div class="relative flex-1">
+                        <Input v-model="whitelistInput" placeholder="输入路径或通配符按回车... (如 logs/ 或 *.db)" class="h-9 bg-muted/30 border-muted-foreground/20 pr-12 focus:bg-background" @keydown.enter.prevent="addWhitelistPath" />
+                        <Button type="button" variant="ghost" size="sm" class="absolute right-1 top-1 h-7 px-2 text-xs hover:bg-primary/10 hover:text-primary transition-colors" @click="addWhitelistPath">
+                          添加
+                        </Button>
+                      </div>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 pt-1 min-h-[1.5rem]" v-if="repoConfig.whitelist_paths">
+                      <span v-for="path in repoConfig.whitelist_paths.split(',').filter(Boolean)" :key="path" 
+                        class="flex items-center gap-1.5 bg-blue-500/5 text-blue-500 px-2.5 py-1 rounded-md text-[11px] font-medium border border-blue-500/10 group transition-all hover:bg-blue-500/10">
+                        {{ path }}
+                        <button type="button" class="text-blue-500/40 hover:text-destructive transition-colors shrink-0" @click.prevent="removeWhitelistPath(path)">
+                          <X class="h-3 w-3" />
+                        </button>
+                      </span>
+                    </div>
+                    <p class="text-[10px] text-muted-foreground mt-1 px-1 leading-relaxed">
+                      同步时将保留匹配上述路径的内容（支持 * 通配符）。匹配项在同步前会被暂存，并在同步完成后自动回填还原。
+                    </p>
                   </div>
                 </div>
 

@@ -22,7 +22,8 @@ type RepoConfig struct {
 	SingleFile bool   `json:"single_file"` // 单文件模式（直接下载文件而非 sparse-checkout）
 	Proxy      string `json:"proxy"`       // 代理类型: none, ghproxy, mirror, custom
 	ProxyURL   string `json:"proxy_url"`   // 自定义代理地址
-	AuthToken  string `json:"auth_token"`  // 认证 Token
+	AuthToken      string `json:"auth_token"`      // 认证 Token
+	WhitelistPaths string `json:"whitelist_paths"` // 同步时保留的路径（白名单路径），逗号分隔
 }
 
 // TaskConfig  任务配置  RepoConfig+TaskConfig=task.config

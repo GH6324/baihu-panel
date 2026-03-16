@@ -946,6 +946,9 @@ func (es *ExecutorService) BuildRepoCommand(task *models.Task) (string, string) 
 	if config.AuthToken != "" {
 		args = append(args, "--auth-token", config.AuthToken)
 	}
+	if config.WhitelistPaths != "" {
+		args = append(args, "--whitelist-paths", config.WhitelistPaths)
+	}
 
 	return exePath + " " + strings.Join(args, " "), filepath.Dir(exePath)
 }

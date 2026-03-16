@@ -12,6 +12,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/engigu/baihu-panel/internal/utils"
 )
 
 type Config struct {
@@ -23,8 +25,9 @@ type Config struct {
 	SingleFile bool
 	Proxy      string
 	ProxyURL   string
-	AuthToken  string
-	HttpProxy  string
+	AuthToken      string
+	HttpProxy      string
+	WhitelistPaths string // Comma separated paths to preserve (whitelist)
 }
 
 func Run(args []string) {
@@ -40,6 +43,7 @@ func Run(args []string) {
 	fs.StringVar(&cfg.ProxyURL, "proxy-url", "", "Custom proxy url")
 	fs.StringVar(&cfg.AuthToken, "auth-token", "", "Auth token")
 	fs.StringVar(&cfg.HttpProxy, "http-proxy", "", "Http proxy")
+	fs.StringVar(&cfg.WhitelistPaths, "whitelist-paths", "", "Comma separated paths to preserve (whitelist)")
 
 	fs.Parse(args)
 
@@ -90,6 +94,9 @@ func syncGit(cfg Config) {
 		gitDir = filepath.Join(dest, ".git")
 	}
 
+	restore := preserve(dest, cfg.WhitelistPaths)
+	defer restore()
+
 	if pathExists(gitDir) {
 		fmt.Println("检测到已存在仓库，执行 git pull")
 		if cfg.Branch != "" {
@@ -104,10 +111,16 @@ func syncGit(cfg Config) {
 		}
 
 		if pathExists(dest) && !isDirEmpty(dest) {
-			fmt.Printf("错误: 目标目录 '%s' 已存在且不为空，无法执行 git clone\n", dest)
+			// If we still have files after preservation, warn but maybe continue if it's just leftovers that git can handle?
+			// Actually git clone requires an empty dir.
+			fmt.Printf("警告: 目标目录 '%s' 不为空，尝试清理非保护文件...\n", dest)
+			// Optional: delete everything else? User might not want that.
+			// For now, keep the error but it's less likely to occur if preservation moved things out.
 			fmt.Println("提示: 请清空目标目录或指定一个新目录")
 			os.Exit(1)
 		}
+		// If dest exists but is empty now, git clone might still complain if the directory itself exists? 
+		// No, git clone works if dir is empty.
 
 		cloneCmd := []string{"git", "clone", "--depth", "1"}
 		if cfg.Branch != "" {
@@ -142,6 +155,9 @@ func syncURL(cfg Config) {
 		dest = filepath.Join(dest, filename)
 		fmt.Printf("目标文件: %s\n", dest)
 	}
+
+	restore := preserve(cfg.TargetPath, cfg.WhitelistPaths)
+	defer restore()
 
 	downloadFile(downloadURL, dest, cfg.AuthToken)
 }
@@ -385,4 +401,97 @@ func isDirEmpty(path string) bool {
 	defer f.Close()
 	_, err = f.Readdirnames(1)
 	return err == io.EOF
+}
+
+// preserve moves specified paths to a temporary location and returns a function to restore them
+func preserve(baseDir string, paths string) func() {
+	if paths == "" || !pathExists(baseDir) {
+		return func() {}
+	}
+
+	preservedList := strings.Split(paths, ",")
+	// 优化：将临时目录创建在 baseDir 同一级或内部，确保在同一个文件系统，使得 Rename 是 O(1) 瞬时完成的
+	tmpParent, err := os.MkdirTemp(baseDir, ".baihu_sync_preserve_*")
+	if err != nil {
+		fmt.Printf("警告: 无法在目标目录创建临时目录用于保留文件: %v\n", err)
+		return func() {}
+	}
+
+	type preservedItem struct {
+		relPath string
+		tmpPath string
+	}
+	var items []preservedItem
+	processed := make(map[string]bool)
+
+	for _, p := range preservedList {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+
+		// Support glob matching
+		pattern := filepath.Join(baseDir, p)
+		matches, err := filepath.Glob(pattern)
+		if err != nil {
+			fmt.Printf("警告: 路径模式无效 %s: %v\n", p, err)
+			continue
+		}
+
+		// If literal path exists but Glob didn't find it (common for direct dir reference), add it manually
+		if len(matches) == 0 && pathExists(pattern) {
+			matches = []string{pattern}
+		}
+
+		for _, fullPath := range matches {
+			relPath, err := filepath.Rel(baseDir, fullPath)
+			// 同时要排除掉临时目录本身以及上级路径
+			if err != nil || strings.HasPrefix(relPath, "..") || relPath == "." || strings.HasPrefix(relPath, ".baihu_sync_preserve") {
+				continue
+			}
+
+			if processed[relPath] {
+				continue
+			}
+			processed[relPath] = true
+
+			tmpPath := filepath.Join(tmpParent, relPath)
+			os.MkdirAll(filepath.Dir(tmpPath), 0755)
+
+			fmt.Printf("正在保护路径: %s\n", relPath)
+			if err := os.Rename(fullPath, tmpPath); err == nil {
+				items = append(items, preservedItem{relPath: relPath, tmpPath: tmpPath})
+			} else {
+				// Rename might fail across filesystems, try copy
+				if err := utils.CopyPath(fullPath, tmpPath); err == nil {
+					os.RemoveAll(fullPath)
+					items = append(items, preservedItem{relPath: relPath, tmpPath: tmpPath})
+				} else {
+					fmt.Printf("警告: 无法保护路径 %s: %v\n", relPath, err)
+				}
+			}
+		}
+	}
+
+	return func() {
+		// Restore in reverse order to handle nested structures correctly if they were picked up separately
+		for i := len(items) - 1; i >= 0; i-- {
+			item := items[i]
+			destPath := filepath.Join(baseDir, item.relPath)
+			os.MkdirAll(filepath.Dir(destPath), 0755)
+
+			if pathExists(destPath) {
+				fmt.Printf("目标已存在，覆盖恢复保护路径: %s\n", item.relPath)
+				os.RemoveAll(destPath)
+			} else {
+				fmt.Printf("正在恢复保护路径: %s\n", item.relPath)
+			}
+
+			if err := os.Rename(item.tmpPath, destPath); err != nil {
+				// Fallback to copy
+				utils.CopyPath(item.tmpPath, destPath)
+			}
+		}
+		os.RemoveAll(tmpParent)
+	}
 }
