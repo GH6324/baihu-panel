@@ -74,7 +74,6 @@ log "  - python: $(python --version 2>&1 | head -n 1 || echo "not found")"
 log "Checking node..."
 log "  - node: $(node --version 2>&1 | head -n 1 || echo "not found")"
 
-# 延迟获取 NODE_PATH，避免同步阻塞启动
 log "Checking npm..."
 log "  - npm: $(npm --version 2>&1 | head -n 1 || echo "not found")"
 

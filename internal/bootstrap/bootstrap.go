@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"time"
 
 	"github.com/engigu/baihu-panel/internal/constant"
 	"github.com/engigu/baihu-panel/internal/database"
@@ -94,14 +95,24 @@ func (a *App) initDatabase() {
 		logger.Fatalf("Failed to init database: %v", err)
 	}
 
+	// 记录各个初始化阶段的时间
+	startTime := time.Now()
+
 	// 执行 V3 迁移（ID 变更迁移）
 	if err := services.RunMigrationV3(); err != nil {
 		logger.Fatalf("Failed to run V3 migration: %v", err)
 	}
+	v3Duration := time.Since(startTime)
+	logger.Infof("[Database] V3 迁移检查完成, 耗时: %v", v3Duration)
 
+	// 执行表结构同步
+	migrateStart := time.Now()
 	if err := database.Migrate(); err != nil {
 		logger.Fatalf("Failed to migrate database: %v", err)
 	}
+	migrateDuration := time.Since(migrateStart)
+	logger.Infof("[Database] 表结构同步完成, 耗时: %v", migrateDuration)
+	logger.Infof("[Database] 数据库总初始化耗时: %v", time.Since(startTime))
 }
 
 func (a *App) initRouter() {

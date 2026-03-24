@@ -84,6 +84,7 @@ func RunMigrationV3() error {
 		res := db.Where("section = ? AND `key` = ?", "system", "migration_v3_success").Limit(1).Find(&migrationFlag)
 		if res.Error == nil && res.RowsAffected > 0 && migrationFlag.Value == "true" {
 			// 如果已经是字符串 ID 模式，双重确认
+			logger.Info("[MigrationV3] 系统已处于 V3 模式，跳过检查")
 			return nil
 		}
 	}
