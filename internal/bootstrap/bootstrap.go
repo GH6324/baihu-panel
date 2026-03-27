@@ -37,6 +37,7 @@ func InitBasic() *App {
 	// 自动加载配置 (内部会自动处理 BH_CONFIG_PATH 环境变量与默认路径的优先级)
 	app.initConfigWithPath("")
 	app.initDatabase()
+	logger.Infof("[System] 低于1.0.11版本升级最新版本错误指引: https://github.com/engigu/baihu-panel/issues/64")
 	return app
 }
 
