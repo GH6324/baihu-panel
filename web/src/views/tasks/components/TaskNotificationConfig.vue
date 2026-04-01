@@ -132,7 +132,7 @@ defineExpose({
 
     <div class="grid gap-5 pl-3 border-l border-muted">
       <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
-        <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold">通知渠道</Label>
+        <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold">通知渠道</Label>
         <div class="sm:col-span-3">
           <Select v-model="notifyWayId">
             <SelectTrigger class="h-9 bg-muted/20 border-muted-foreground/15 transition-all focus:bg-background/50">
@@ -150,7 +150,7 @@ defineExpose({
 
       <template v-if="notifyWayId !== 'none'">
         <div class="grid grid-cols-1 sm:grid-cols-4 items-start gap-3">
-          <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold pt-2.5">通知时机</Label>
+          <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold pt-2.5">通知时机</Label>
           <div class="sm:col-span-3 space-y-3">
             <div class="flex flex-wrap gap-4 p-3 rounded-lg bg-muted/20 border border-muted-foreground/10 items-center transition-all hover:bg-muted/30">
               <div class="flex items-center gap-2 group">
@@ -197,8 +197,7 @@ defineExpose({
 
 <style scoped>
 :deep(*) {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 :deep(label) {
   text-rendering: optimizeLegibility;

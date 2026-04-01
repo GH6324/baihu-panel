@@ -420,7 +420,7 @@ async function save() {
 
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
-    <DialogContent class="sm:max-w-[560px] p-0 overflow-hidden border-none bg-background shadow-2xl" @openAutoFocus.prevent>
+    <DialogContent class="sm:max-w-[620px] p-0 overflow-hidden border-none bg-background shadow-2xl transition-all duration-300" style="text-rendering: optimizeLegibility;" @openAutoFocus.prevent>
       <div class="flex flex-col max-h-[85vh]">
         <DialogHeader class="px-6 pr-12 pt-6 pb-2 shrink-0">
           <div class="flex items-center justify-between">
@@ -445,7 +445,7 @@ async function save() {
 
               <div class="grid gap-4 pl-3 border-l border-muted">
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
-                  <Label class="sm:text-right text-xs text-muted-foreground uppercase tracking-wider font-semibold">任务名称</Label>
+                  <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold">任务名称</Label>
                   <Input v-model="form.name" placeholder="输入同步任务名称" class="sm:col-span-3 h-9 bg-muted/30 border-muted-foreground/20 focus:bg-background transition-all" />
                 </div>
 
@@ -483,7 +483,7 @@ async function save() {
 
               <div class="grid gap-4 pl-3 border-l border-muted">
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
-                  <Label class="sm:text-right text-xs text-muted-foreground uppercase tracking-wider font-semibold">源类型</Label>
+                  <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold">源类型</Label>
                   <div class="sm:col-span-3">
                     <Select :model-value="repoConfig.source_type" @update:model-value="(v) => repoConfig.source_type = String(v || 'git')">
                       <SelectTrigger class="h-9 bg-muted/30 border-muted-foreground/20">
@@ -508,7 +508,7 @@ async function save() {
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
-                  <Label class="sm:text-right text-xs text-muted-foreground uppercase tracking-wider font-semibold">源地址</Label>
+                  <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold">源地址</Label>
                   <div class="sm:col-span-3 relative">
                     <Input v-model="repoConfig.source_url"
                       :placeholder="repoConfig.source_type === 'git' ? 'https://github.com/user/repo.git' : 'https://example.com/file.js'"
@@ -519,7 +519,7 @@ async function save() {
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
-                  <Label class="sm:text-right text-xs text-muted-foreground uppercase tracking-wider font-semibold">目标路径</Label>
+                  <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold">目标路径</Label>
                   <div class="sm:col-span-3">
                     <DirTreeSelect v-if="selectedAgentId === 'local'" :model-value="repoConfig.target_path || ''"
                       @update:model-value="v => repoConfig.target_path = v" class="h-9" />
@@ -738,7 +738,7 @@ async function save() {
 
               <div class="grid gap-5 pl-3 border-l border-muted">
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
-                  <Label class="sm:text-right text-xs text-muted-foreground uppercase tracking-wider font-semibold">定时规则</Label>
+                  <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold">定时规则</Label>
                   <div class="sm:col-span-3">
                     <Input v-model="form.schedule" placeholder="* * * * * *" class="h-9 font-mono text-[13px] bg-muted/30 border-muted-foreground/20 focus:ring-1 focus:ring-primary/50" />
                     <div v-if="cronDescription" class="mt-2.5 p-2 rounded-lg bg-primary/5 border border-primary/10 text-[11px] text-primary font-medium flex items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
@@ -761,7 +761,7 @@ async function save() {
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
-                  <Label class="sm:text-right text-xs text-muted-foreground uppercase tracking-wider font-semibold">随机延迟</Label>
+                  <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold">随机延迟</Label>
                   <div class="sm:col-span-3 flex items-center gap-4">
                     <div class="flex items-center gap-2">
                       <Input :model-value="form.random_range" @update:model-value="v => form.random_range = Number(v || 0)" type="number" :min="0" class="w-20 h-9 bg-muted/30 text-center" />
@@ -774,7 +774,7 @@ async function save() {
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-start gap-3">
-                  <Label class="sm:text-right text-xs text-muted-foreground uppercase tracking-wider font-semibold">运行策略</Label>
+                  <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold">运行策略</Label>
                   <div class="sm:col-span-3 space-y-4">
                     
                     <div class="p-3 rounded-xl bg-muted/20 border border-muted-foreground/10 space-y-2.5">
@@ -886,5 +886,14 @@ async function save() {
 
 :deep(label), :deep(h3), :deep(input) {
   text-rendering: optimizeLegibility;
+}
+</style>
+<style scoped>
+:deep(*) {
+  text-rendering: optimizeLegibility;
+}
+:deep(label) {
+  text-rendering: optimizeLegibility;
+  letter-spacing: 0.01em;
 }
 </style>

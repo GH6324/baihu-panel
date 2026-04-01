@@ -443,7 +443,7 @@ async function save() {
 
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
-    <DialogContent class="sm:max-w-[560px] p-0 overflow-hidden border-none bg-background shadow-2xl antialiased" style="text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;" @openAutoFocus.prevent>
+    <DialogContent class="sm:max-w-[560px] p-0 overflow-hidden border-none bg-background shadow-2xl transition-all duration-300" style="text-rendering: optimizeLegibility;" @openAutoFocus.prevent>
       <div class="flex flex-col max-h-[85vh]">
         <DialogHeader class="px-6 pr-12 pt-6 pb-2 shrink-0 border-b border-muted/50">
           <DialogTitle class="text-xl font-bold py-2">
@@ -461,11 +461,11 @@ async function save() {
               </div>
               <div class="grid gap-5 pl-3 border-l border-muted">
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
-                  <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold">任务名称</Label>
+                  <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold">任务名称</Label>
                   <Input v-model="form.name" placeholder="输入任务描述性名称" :class="cn('sm:col-span-3 h-9 bg-muted/20 border-muted-foreground/15 transition-all focus:bg-background/50', form.name ? 'text-sm font-medium' : 'text-[11px] font-normal')" />
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-start gap-3">
-                  <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold pt-2.5">任务标签</Label>
+                  <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold pt-2.5">任务标签</Label>
                   <div class="sm:col-span-3 space-y-2">
                     <div class="flex gap-2">
                       <div class="relative flex-1">
@@ -482,7 +482,7 @@ async function save() {
                   </div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
-                  <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold">执行位置</Label>
+                  <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold">执行位置</Label>
                   <div class="sm:col-span-3">
                     <Select v-model="selectedAgentId">
                       <SelectTrigger class="h-9 bg-muted/20 border-muted-foreground/15"><SelectValue placeholder="选择执行节点" /></SelectTrigger>
@@ -494,7 +494,7 @@ async function save() {
                   </div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
-                  <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold">触发方式</Label>
+                  <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold">触发方式</Label>
                   <div class="sm:col-span-3">
                     <Select v-model="selectedTriggerType">
                       <SelectTrigger class="h-9 bg-muted/20 border-muted-foreground/15"><SelectValue /></SelectTrigger>
@@ -525,7 +525,7 @@ async function save() {
                     </div>
                   </div>
                   <div class="grid grid-cols-1 sm:grid-cols-4 items-start gap-3">
-                    <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold pt-2.5">语言环境</Label>
+                    <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold pt-2.5">语言环境</Label>
                     <div class="sm:col-span-3 space-y-2">
                       <div v-for="(clang, idx) in selectedLangs" :key="idx" class="flex gap-2 p-2 rounded-lg bg-muted/20 border border-muted-foreground/10 group/lang relative overflow-hidden">
                         <div class="absolute left-0 top-0 bottom-0 w-0.5 bg-primary/20 group-hover/lang:bg-primary transition-colors" />
@@ -552,19 +552,19 @@ async function save() {
                   </div>
                 </template>
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
-                  <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold">执行命令</Label>
+                  <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold">执行命令</Label>
                   <div class="sm:col-span-3 relative"><Input v-model="form.command" placeholder="例如: python main.py --args" :class="cn('h-9 bg-muted/20 border-muted-foreground/15 transition-all focus:bg-background/50 pr-10', form.command ? 'font-mono text-sm tracking-tight font-medium' : 'text-[11px] font-normal')" /><Terminal class="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground opacity-40 pointer-events-none" /></div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
-                  <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold">工作目录</Label>
+                  <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold">工作目录</Label>
                   <div class="sm:col-span-3"><DirTreeSelect v-if="selectedAgentId === 'local'" v-model="currentWorkDir" class="h-9" /><Input v-else v-model="currentWorkDir" placeholder="任务运行路径（留空取 Agent 默认值）" :class="cn('h-9 bg-muted/20 border-muted-foreground/15 transition-all focus:bg-background/50', currentWorkDir ? 'font-mono text-sm tracking-tight font-medium' : 'text-[11px] font-normal')" /></div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3 pb-1">
-                  <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold">变量注入</Label>
+                  <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold">变量注入</Label>
                   <div class="sm:col-span-3"><div class="flex items-center space-x-2 bg-muted/10 px-3 py-1.5 rounded-full border border-muted-foreground/10 w-fit"><Switch :model-value="allEnvsEnabled" @update:model-value="onAllEnvsChange" id="all-envs" class="scale-90" /><Label for="all-envs" class="text-[11px] font-medium cursor-pointer">全量注入</Label></div></div>
                 </div>
                 <div v-if="!allEnvsEnabled" class="grid grid-cols-1 sm:grid-cols-4 items-start gap-3">
-                  <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold pt-2.5">按需包含</Label>
+                  <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold pt-2.5">按需包含</Label>
                   <div class="sm:col-span-3 space-y-2">
                     <Popover><PopoverTrigger as-child><Button variant="outline" class="w-full justify-between h-9 bg-muted/10 border-muted-foreground/15 text-xs rounded-xl"><span class="text-muted-foreground">选择关联的环境变量...</span><ChevronDown class="h-4 w-4 opacity-30" /></Button></PopoverTrigger>
                       <PopoverContent class="p-0 w-[400px]" align="start"><ScrollArea class="h-64 p-2"><div v-for="env in filteredEnvVars" :key="env.id" @click.stop="addEnv(env.id)" class="p-3 rounded-lg hover:bg-primary/5 cursor-pointer text-sm font-mono font-bold">{{ env.name }}</div></ScrollArea></PopoverContent>
@@ -584,7 +584,7 @@ async function save() {
               <div class="grid gap-5 pl-3 border-l border-muted">
                 <template v-if="selectedTriggerType === TRIGGER_TYPE.CRON">
                   <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
-                    <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold">定时规则</Label>
+                    <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold">定时规则</Label>
                     <div class="sm:col-span-3">
                       <Input v-model="form.schedule" placeholder="秒 分 时 日 月 周 (必须 6 位)" :class="cn('h-9 bg-muted/20 border-muted-foreground/15 transition-all focus:ring-1 focus:ring-primary/40 focus:border-primary/40', form.schedule ? 'font-mono text-sm tracking-[0.1em] font-medium' : 'text-[11px] font-normal')" />
                       <div v-if="cronDescription" class="mt-2.5 p-2 px-3 rounded-xl bg-primary/5 border border-primary/10 text-[11px] text-primary/80 font-medium flex items-center gap-2.5"><Zap class="h-3 w-3 text-primary" />{{ cronDescription }}</div>
@@ -593,20 +593,18 @@ async function save() {
                   </div>
                 </template>
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
-                  <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold">失败策略</Label>
+                  <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold">失败策略</Label>
                   <div class="sm:col-span-3 flex items-center gap-3">
                     <span class="text-[11px] text-muted-foreground">重试</span>
                     <Input :model-value="form.retry_count" @update:model-value="v => form.retry_count = Number(v)" type="number" :min="0" class="w-20 h-9 bg-muted/20 border-muted-foreground/15 text-center font-bold" />
                     <span class="text-[11px] text-muted-foreground">次</span>
                   </div>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-4 items-start gap-3">
-                  <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold pt-2.5">运行策略</Label>
-                  <div class="sm:col-span-3 flex items-center gap-4">
-                    <div class="flex items-center gap-2">
-                      <Input :model-value="form.timeout" @update:model-value="v => form.timeout = Number(v)" type="number" :min="0" class="w-20 h-9 bg-muted/20 border-muted-foreground/15 text-center font-bold" />
-                      <span class="text-[11px] font-semibold text-muted-foreground">分钟超时</span>
-                    </div>
+                <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
+                  <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold">运行策略</Label>
+                  <div class="sm:col-span-3 flex items-center gap-3">
+                    <Input :model-value="form.timeout" @update:model-value="v => form.timeout = Number(v)" type="number" :min="0" class="w-20 h-9 bg-muted/20 border-muted-foreground/15 text-center font-bold" />
+                    <span class="text-[11px] text-muted-foreground">分钟超时</span>
                   </div>
                 </div>
               </div>
@@ -628,12 +626,11 @@ async function save() {
 
 <style scoped>
 :deep(*) {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 :deep(label) {
   text-rendering: optimizeLegibility;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
 }
 </style>
 
