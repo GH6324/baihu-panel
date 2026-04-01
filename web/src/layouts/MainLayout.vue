@@ -111,7 +111,7 @@ onMounted(() => {
 
     <!-- Sidebar -->
     <aside :class="[
-      'fixed lg:static inset-y-0 z-50 w-44 border-r bg-background flex flex-col transition-transform duration-300 ease-in-out',
+      'fixed lg:static inset-y-0 z-50 w-44 2xl:w-60 border-r bg-background flex flex-col transition-all duration-300 ease-in-out',
       mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
     ]">
       <div class="h-14 flex items-center justify-center px-4 font-semibold text-lg border-b relative">
@@ -140,8 +140,8 @@ onMounted(() => {
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 overflow-auto w-full lg:w-auto min-w-0 relative">
-      <div class="h-14 border-b bg-background flex items-center justify-between px-4 lg:px-6">
+    <main class="flex-1 overflow-auto w-full lg:w-auto min-w-0 relative flex flex-col items-center bg-gray-50/50 dark:bg-transparent">
+      <div class="w-full h-14 border-b bg-background flex items-center justify-between px-4 lg:px-6 2xl:px-10 shrink-0">
         <div class="flex items-center gap-3 flex-1 min-w-0">
           <Button variant="ghost" size="icon" class="h-8 w-8 lg:hidden shrink-0" @click="mobileMenuOpen = true">
             <Menu class="h-5 w-5" />
@@ -156,7 +156,7 @@ onMounted(() => {
           <ThemeToggle />
         </div>
       </div>
-      <div class="p-4 lg:p-6">
+      <div class="w-full max-w-[2000px] p-4 lg:p-6 2xl:p-12 flex-1">
         <RouterView />
       </div>
     </main>

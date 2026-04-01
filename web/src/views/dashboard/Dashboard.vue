@@ -441,47 +441,47 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="space-y-4">
-    <div>
-      <h2 class="text-2xl font-bold tracking-tight">数据仪表</h2>
-      <p class="text-muted-foreground">查看系统运行状态和统计数据</p>
-    </div>
+    <div class="space-y-4 xl:space-y-6 2xl:space-y-10">
+      <div>
+        <h2 class="text-2xl 2xl:text-4xl font-bold tracking-tight">数据仪表</h2>
+        <p class="text-muted-foreground 2xl:text-lg">查看系统运行状态和统计数据</p>
+      </div>
 
-    <div class="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
-      <Card v-for="item in statItems" :key="item.key" class="cursor-pointer hover:bg-accent/50 transition-colors"
-        @click="navigateTo(item.route)">
-        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-xs sm:text-sm font-medium">{{ item.label }}</CardTitle>
-          <component :is="item.icon" class="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div class="text-xl sm:text-2xl font-bold">{{ displayStats[item.key as keyof Stats] }}</div>
-        </CardContent>
-      </Card>
-    </div>
+      <div class="grid gap-4 xl:gap-6 2xl:gap-8 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+        <Card v-for="item in statItems" :key="item.key" class="cursor-pointer hover:bg-accent/50 transition-colors"
+          @click="navigateTo(item.route)">
+          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2 2xl:pb-4">
+            <CardTitle class="text-xs sm:text-sm 2xl:text-base font-medium">{{ item.label }}</CardTitle>
+            <component :is="item.icon" class="h-4 w-4 2xl:h-5 2xl:w-5 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div class="text-xl sm:text-2xl 2xl:text-4xl font-bold">{{ displayStats[item.key as keyof Stats] }}</div>
+          </CardContent>
+        </Card>
+      </div>
 
-    <div class="grid gap-4 lg:grid-cols-10">
-      <Card class="lg:col-span-7 h-[400px] sm:h-[400px]">
-        <CardHeader class="pb-2">
-          <CardTitle class="text-base sm:text-lg">执行统计</CardTitle>
-          <CardDescription class="text-xs sm:text-sm">最近{{ chartDays }}天任务执行情况</CardDescription>
-        </CardHeader>
-        <CardContent class="relative h-[300px]">
-          <div id="stats-chart" class="w-full h-full"></div>
-          <div v-if="!chartsLoaded"
-            class="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm bg-card">
-            加载中...
-          </div>
-        </CardContent>
-      </Card>
+      <div class="grid gap-4 xl:gap-6 2xl:gap-8 lg:grid-cols-10">
+        <Card class="lg:col-span-7 h-[400px] 2xl:h-[500px]">
+          <CardHeader class="pb-2">
+            <CardTitle class="text-base sm:text-lg 2xl:text-xl">执行统计</CardTitle>
+            <CardDescription class="text-xs sm:text-sm 2xl:text-base">最近{{ chartDays }}天任务执行情况</CardDescription>
+          </CardHeader>
+          <CardContent class="relative h-[300px] 2xl:h-[400px]">
+            <div id="stats-chart" class="w-full h-full"></div>
+            <div v-if="!chartsLoaded"
+              class="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm bg-card">
+              加载中...
+            </div>
+          </CardContent>
+        </Card>
 
-      <Card class="lg:col-span-3 h-[400px] sm:h-[400px]">
-        <CardHeader class="pb-2">
-          <CardTitle class="text-base sm:text-lg">任务占比</CardTitle>
-          <CardDescription class="text-xs sm:text-sm">最近{{ chartDays }}天任务执行分布</CardDescription>
-        </CardHeader>
-        <CardContent class="relative h-[300px]">
-          <div id="pie-chart" class="w-full h-full"></div>
+        <Card class="lg:col-span-3 h-[400px] 2xl:h-[500px]">
+          <CardHeader class="pb-2">
+            <CardTitle class="text-base sm:text-lg 2xl:text-xl">任务占比</CardTitle>
+            <CardDescription class="text-xs sm:text-sm 2xl:text-base">最近{{ chartDays }}天任务执行分布</CardDescription>
+          </CardHeader>
+          <CardContent class="relative h-[300px] 2xl:h-[400px]">
+            <div id="pie-chart" class="w-full h-full"></div>
           <div v-if="!chartsLoaded"
             class="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm bg-card">
             加载中...

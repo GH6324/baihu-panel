@@ -420,7 +420,7 @@ async function save() {
 
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
-    <DialogContent class="sm:max-w-[620px] p-0 overflow-hidden border-none bg-background shadow-2xl transition-all duration-300" style="text-rendering: optimizeLegibility;" @openAutoFocus.prevent>
+    <DialogContent class="max-w-[95vw] sm:max-w-[700px] xl:max-w-[950px] p-0 overflow-hidden border-none bg-background shadow-2xl transition-all duration-300" style="text-rendering: optimizeLegibility;" @openAutoFocus.prevent>
       <div class="flex flex-col max-h-[85vh]">
         <DialogHeader class="px-6 pr-12 pt-6 pb-2 shrink-0">
           <div class="flex items-center justify-between">
