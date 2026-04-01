@@ -9,10 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import DirTreeSelect from '@/components/DirTreeSelect.vue'
-import { Plus, ChevronDown, X, Search, Check, ChevronsUpDown, AlertCircle, Terminal, Clock, Zap, Loader2, Shield } from 'lucide-vue-next'
+import { Plus, ChevronDown, X, Search, Check, ChevronsUpDown, AlertCircle, Terminal, Zap, Loader2 } from 'lucide-vue-next'
 import { cn } from '@/lib/utils'
 import { api, type Task, type EnvVar, type Agent, type MiseLanguage } from '@/api'
-import { PATHS, TRIGGER_TYPE, ENV_TYPE } from '@/constants'
+import { PATHS, TRIGGER_TYPE } from '@/constants'
 import { toast } from 'vue-sonner'
 import { getCronDescription } from '@/utils/cron'
 import TaskNotificationConfig from './components/TaskNotificationConfig.vue'
@@ -63,22 +63,14 @@ const cronDescription = computed(() => {
   return getCronDescription(form.value.schedule, (navigator as any).language)
 })
 
-const isCronValid = computed(() => {
-  if (!form.value.schedule) return true
-  const s = form.value.schedule.trim()
-  if (s.startsWith('@')) return true
-  const fields = s.split(/\s+/).filter(Boolean)
-  return fields.length === 6
-})
+
 
 // 监听 concurrencyEnabled 的变化，同步到 concurrency
 watch(concurrencyEnabled, (val) => {
   concurrency.value = val ? 1 : 0
 })
 
-function onConcurrencyChange(val: boolean) {
-  concurrencyEnabled.value = val
-}
+
 
 function onAllEnvsChange(val: boolean) {
   allEnvsEnabled.value = val
@@ -451,88 +443,61 @@ async function save() {
 
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
-    <DialogContent class="sm:max-w-[560px] p-0 overflow-hidden border-none bg-background shadow-2xl" @openAutoFocus.prevent>
-
+    <DialogContent class="sm:max-w-[560px] p-0 overflow-hidden border-none bg-background shadow-2xl antialiased" style="text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;" @openAutoFocus.prevent>
       <div class="flex flex-col max-h-[85vh]">
-        <DialogHeader class="px-6 pr-12 pt-6 pb-2 shrink-0">
-          <DialogTitle class="text-xl font-bold">
+        <DialogHeader class="px-6 pr-12 pt-6 pb-2 shrink-0 border-b border-muted/50">
+          <DialogTitle class="text-xl font-bold py-2">
             {{ isEdit ? '编辑任务' : '新建任务' }}
           </DialogTitle>
         </DialogHeader>
 
         <ScrollArea class="flex-1 min-h-0 px-6">
-          <div class="space-y-8 py-4 pb-8">
+          <div class="space-y-10 py-6 pb-10">
             <!-- 基本信息 Section -->
             <section class="space-y-4">
-              <div class="flex items-center gap-2 mb-1">
-                <div class="h-4 w-1 bg-primary rounded-full" />
-                <h3 class="text-sm font-bold text-foreground">基本信息</h3>
+              <div class="flex items-center gap-2 mb-2">
+                <div class="h-4 w-1 bg-primary rounded-full shadow-sm shadow-primary/20" />
+                <h3 class="text-sm font-bold text-foreground/90">基本信息</h3>
               </div>
-
-              <div class="grid gap-4 pl-3 border-l border-muted">
+              <div class="grid gap-5 pl-3 border-l border-muted">
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
-                  <Label class="sm:text-right text-xs text-muted-foreground uppercase tracking-wider font-semibold">任务名称</Label>
-                  <Input v-model="form.name" placeholder="输入任务描述性名称" 
-                    :class="cn('sm:col-span-3 h-9 bg-muted/20 border-muted-foreground/15 transition-all focus:bg-background/50', form.name ? 'text-sm font-medium' : 'text-[11px] font-normal')" />
+                  <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold">任务名称</Label>
+                  <Input v-model="form.name" placeholder="输入任务描述性名称" :class="cn('sm:col-span-3 h-9 bg-muted/20 border-muted-foreground/15 transition-all focus:bg-background/50', form.name ? 'text-sm font-medium' : 'text-[11px] font-normal')" />
                 </div>
-
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-start gap-3">
-                  <Label class="sm:text-right text-xs text-muted-foreground uppercase tracking-wider pt-2.5">任务标签</Label>
+                  <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold pt-2.5">任务标签</Label>
                   <div class="sm:col-span-3 space-y-2">
                     <div class="flex gap-2">
                       <div class="relative flex-1">
-                        <Input v-model="tagInput" placeholder="输入标签按回车..." 
-                          :class="cn('h-9 bg-muted/20 border-muted-foreground/15 transition-all pr-12', tagInput ? 'text-sm font-medium' : 'text-[11px] font-normal')" 
-                          @keydown.enter.prevent="addTag" />
-                        <Button type="button" variant="ghost" size="sm" class="absolute right-1 top-1 h-7 px-2 text-xs hover:bg-primary/10 hover:text-primary transition-colors" @click="addTag">
-                          添加
-                        </Button>
+                        <Input v-model="tagInput" placeholder="输入标签按回车..." :class="cn('h-9 bg-muted/20 border-muted-foreground/15 transition-all pr-12', tagInput ? 'text-sm font-medium' : 'text-[11px] font-normal')" @keydown.enter.prevent="addTag" />
+                        <Button type="button" variant="ghost" size="sm" class="absolute right-1 top-1 h-7 px-2 text-xs hover:bg-primary/10 hover:text-primary transition-colors" @click.prevent="addTag">添加</Button>
                       </div>
                     </div>
                     <div v-if="form.tags" class="flex flex-wrap gap-1.5 pt-1">
-                      <span v-for="tag in form.tags.split(',').filter(Boolean)" :key="tag" 
-                        class="flex items-center gap-1.5 bg-primary/5 text-primary px-2.5 py-1 rounded-full text-[11px] font-medium border border-primary/10 group transition-all hover:bg-primary/10">
+                      <span v-for="tag in form.tags.split(',').filter(Boolean)" :key="tag" class="flex items-center gap-1.5 bg-primary/5 text-primary px-2.5 py-1 rounded-full text-[11px] font-medium border border-primary/10 group transition-all hover:bg-primary/10">
                         {{ tag }}
-                        <button type="button" class="text-primary/40 hover:text-destructive transition-colors shrink-0" @click.prevent="removeTag(tag)">
-                          <X class="h-3 w-3" />
-                        </button>
+                        <button type="button" class="text-primary/40 hover:text-destructive transition-colors shrink-0" @click.prevent="removeTag(tag)"><X class="h-3 w-3" /></button>
                       </span>
                     </div>
                   </div>
                 </div>
-
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
-                  <Label class="sm:text-right text-xs text-muted-foreground uppercase tracking-wider font-semibold">执行位置</Label>
+                  <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold">执行位置</Label>
                   <div class="sm:col-span-3">
                     <Select v-model="selectedAgentId">
-                      <SelectTrigger class="h-9 bg-muted/20 border-muted-foreground/15">
-                        <SelectValue placeholder="选择执行节点" />
-                      </SelectTrigger>
+                      <SelectTrigger class="h-9 bg-muted/20 border-muted-foreground/15"><SelectValue placeholder="选择执行节点" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="local" class="flex items-center gap-2">
-                          <div class="flex items-center gap-2">
-                            <div class="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                            <span>本地执行 (Local)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem v-for="agent in onlineAgents" :key="agent.id" :value="String(agent.id)">
-                          <div class="flex items-center gap-2">
-                            <div class="w-1.5 h-1.5 rounded-full" :class="agent.status === 'online' ? 'bg-green-500' : 'bg-muted-foreground'" />
-                            <span>{{ agent.name }}</span>
-                          </div>
-                        </SelectItem>
+                        <SelectItem value="local" class="flex items-center gap-2"><div class="flex items-center gap-2"><div class="w-1.5 h-1.5 rounded-full bg-blue-500" /><span>本地执行 (Local)</span></div></SelectItem>
+                        <SelectItem v-for="agent in onlineAgents" :key="agent.id" :value="String(agent.id)"><div class="flex items-center gap-2"><div class="w-1.5 h-1.5 rounded-full" :class="agent.status === 'online' ? 'bg-green-500' : 'bg-muted-foreground'" /><span>{{ agent.name }}</span></div></SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
-
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
-                  <Label class="sm:text-right text-xs text-muted-foreground uppercase tracking-wider font-semibold">触发方式</Label>
+                  <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold">触发方式</Label>
                   <div class="sm:col-span-3">
                     <Select v-model="selectedTriggerType">
-                      <SelectTrigger class="h-9 bg-muted/20 border-muted-foreground/15">
-                        <SelectValue />
-                      </SelectTrigger>
+                      <SelectTrigger class="h-9 bg-muted/20 border-muted-foreground/15"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem :value="TRIGGER_TYPE.CRON">⏳ 定时周期触发</SelectItem>
                         <SelectItem :value="TRIGGER_TYPE.BAIHU_STARTUP">🚀 系统启动触发</SelectItem>
@@ -543,369 +508,132 @@ async function save() {
               </div>
             </section>
 
-            <!-- 命令配置 Section -->
+            <!-- 执行配置 Section -->
             <section class="space-y-4">
-              <div class="flex items-center gap-2 mb-1">
-                <div class="h-4 w-1 bg-primary rounded-full" />
-                <h3 class="text-sm font-bold text-foreground">执行配置</h3>
+              <div class="flex items-center gap-2 mb-2">
+                <div class="h-4 w-1 bg-primary rounded-full shadow-sm shadow-primary/20" />
+                <h3 class="text-sm font-bold text-foreground/90">执行配置</h3>
               </div>
-
-              <div class="grid gap-4 pl-3 border-l border-muted">
-                <!-- 语言环境 -->
+              <div class="grid gap-5 pl-3 border-l border-muted">
                 <template v-if="selectedAgentId === 'local'">
                   <div class="grid grid-cols-1 sm:grid-cols-4 items-start gap-3">
                     <div class="sm:col-span-1" />
                     <div class="sm:col-span-3">
-                      <div class="flex items-center gap-2.5 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10 text-amber-600 dark:text-amber-400 text-[11px] leading-relaxed">
-                        <AlertCircle class="h-4 w-4 shrink-0 text-amber-500" />
-                        <p>请先在<b>「语言依赖」</b>中安装所需的运行时。执行脚本时将自动注入该环境。</p>
+                      <div class="flex items-center gap-2.5 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10 text-amber-600 dark:text-amber-400 text-[11px] leading-relaxed font-medium">
+                        <AlertCircle class="h-4 w-4 shrink-0 text-amber-500" /><p>请先在<b>「语言依赖」</b>中安装所需的运行时。执行脚本时将自动注入该环境。</p>
                       </div>
                     </div>
                   </div>
-
                   <div class="grid grid-cols-1 sm:grid-cols-4 items-start gap-3">
-                    <Label class="sm:text-right text-xs text-muted-foreground uppercase tracking-wider pt-2.5">语言环境</Label>
+                    <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold pt-2.5">语言环境</Label>
                     <div class="sm:col-span-3 space-y-2">
-                      <div v-for="(clang, idx) in selectedLangs" :key="idx" 
-                        class="flex gap-2 p-2 rounded-lg bg-muted/20 border border-muted-foreground/10 group/lang relative overflow-hidden">
+                      <div v-for="(clang, idx) in selectedLangs" :key="idx" class="flex gap-2 p-2 rounded-lg bg-muted/20 border border-muted-foreground/10 group/lang relative overflow-hidden">
                         <div class="absolute left-0 top-0 bottom-0 w-0.5 bg-primary/20 group-hover/lang:bg-primary transition-colors" />
                         <Popover>
-                          <PopoverTrigger asChild>
-                            <Button variant="ghost" role="combobox" class="justify-between flex-1 h-8 text-xs font-normal hover:bg-background/50">
-                              <div class="flex items-center gap-2 truncate">
-                                <div v-if="clang.name && getLangIcon(clang.name)" class="w-4 h-4 shrink-0 rounded-sm bg-white p-0.5 border shadow-sm">
-                                  <img :src="getLangIcon(clang.name)" class="w-full h-full object-contain" />
-                                </div>
-                                <span class="font-medium">{{ clang.name || "选择环境..." }}</span>
-                              </div>
-                              <ChevronsUpDown class="ml-1 h-3 w-3 opacity-40" />
-                            </Button>
-                          </PopoverTrigger>
+                          <PopoverTrigger asChild><Button variant="ghost" class="justify-between flex-1 h-8 text-xs font-normal hover:bg-background/50"><div class="flex items-center gap-2 truncate"><div v-if="clang.name && getLangIcon(clang.name)" class="w-4 h-4 shrink-0 rounded-sm bg-white p-0.5 border shadow-sm"><img :src="getLangIcon(clang.name)" class="w-full h-full object-contain" /></div><span class="font-medium">{{ clang.name || "选择环境..." }}</span></div><ChevronsUpDown class="ml-1 h-3 w-3 opacity-40" /></Button></PopoverTrigger>
                           <PopoverContent class="p-0 w-[240px]" align="start">
-                            <div class="p-2 border-b bg-muted/30">
-                              <div class="relative">
-                                <Search class="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                                <Input v-model="pluginSearch" placeholder="搜索已安装语言..." 
-                                  :class="cn('h-8 pl-8 bg-background border-muted-foreground/20', pluginSearch ? 'text-xs font-medium' : 'text-[10px]')" />
-                              </div>
-                            </div>
+                            <div class="p-2 border-b bg-muted/30"><div class="relative"><Search class="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" /><Input v-model="pluginSearch" placeholder="搜索已安装语言..." :class="cn('h-8 pl-8 bg-background border-muted-foreground/20', pluginSearch ? 'text-xs font-medium' : 'text-[10px]')" /></div></div>
                             <ScrollArea class="h-48 p-1">
-                              <div v-if="loadingLangs" class="flex items-center justify-center py-6">
-                                <Loader2 class="h-5 w-5 animate-spin text-primary/50" />
-                              </div>
-                              <div v-else-if="filteredPlugins.length === 0" class="py-6 text-center text-xs text-muted-foreground">
-                                未找到匹配项
-                              </div>
-                              <button v-else v-for="p in filteredPlugins" :key="p" @click="updateLangName(idx, p)"
-                                class="w-full flex items-center px-3 py-2 text-xs rounded-md hover:bg-accent text-left transition-all group/item mb-0.5">
-                                <div class="mr-3 h-5 w-5 shrink-0 flex items-center justify-center transition-transform group-hover/item:scale-110">
-                                  <img v-if="getLangIcon(p)" :src="getLangIcon(p)" class="w-full h-full object-contain p-0.5 bg-white rounded border" />
-                                  <div v-else class="w-full h-full flex items-center justify-center bg-primary/10 rounded-sm text-[8px] font-bold border">
-                                    {{ p.substring(0, 2) }}
-                                  </div>
-                                </div>
-                                <span class="flex-1" :class="{ 'font-bold text-primary': clang.name === p }">{{ p }}</span>
-                                <Check v-if="clang.name === p" class="h-3 w-3 text-primary" />
-                              </button>
+                              <div v-if="loadingLangs" class="flex items-center justify-center py-6"><Loader2 class="h-5 w-5 animate-spin text-primary/50" /></div>
+                              <button v-else v-for="p in filteredPlugins" :key="p" @click="updateLangName(idx, p)" class="w-full flex items-center px-3 py-2 text-xs rounded-md hover:bg-accent text-left transition-all mb-0.5"><span class="flex-1" :class="{ 'font-bold text-primary': clang.name === p }">{{ p }}</span><Check v-if="clang.name === p" class="h-3 w-3 text-primary" /></button>
                             </ScrollArea>
                           </PopoverContent>
                         </Popover>
-
                         <Popover>
-                          <PopoverTrigger asChild :disabled="!clang.name">
-                            <Button variant="ghost" role="combobox" class="justify-between w-28 h-8 text-xs font-normal hover:bg-background/50" :disabled="!clang.name">
-                              <span class="truncate">{{ clang.version || "版本..." }}</span>
-                              <ChevronsUpDown class="h-3 w-3 opacity-40 ml-1" />
-                            </Button>
-                          </PopoverTrigger>
+                          <PopoverTrigger asChild :disabled="!clang.name"><Button variant="ghost" class="justify-between w-28 h-8 text-xs font-normal hover:bg-background/50" :disabled="!clang.name"><span class="truncate">{{ clang.version || "版本..." }}</span><ChevronsUpDown class="h-3 w-3 opacity-40 ml-1" /></Button></PopoverTrigger>
                           <PopoverContent class="p-0 w-[160px]" align="start">
-                            <div class="p-2 border-b bg-muted/30">
-                              <div class="relative">
-                                <Search class="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                                <Input v-model="versionSearch" placeholder="搜索版本..." 
-                                  :class="cn('h-8 pl-8 bg-background border-muted-foreground/20', versionSearch ? 'font-mono text-xs font-medium' : 'text-[10px]')" />
-                              </div>
-                            </div>
-                            <ScrollArea class="h-48 p-1">
-                              <div v-if="getFilteredVersions(clang.availableVersions).length === 0" class="py-6 text-center text-xs text-muted-foreground">
-                                无可用版本
-                              </div>
-                              <button v-else v-for="v in getFilteredVersions(clang.availableVersions)" :key="v" @click="clang.version = v"
-                                class="w-full flex items-center px-3 py-2 text-xs rounded-md hover:bg-accent text-left mb-0.5 font-mono">
-                                <span class="flex-1 truncate" :class="{ 'font-bold text-primary': clang.version === v }">{{ v }}</span>
-                                <Check v-if="clang.version === v" class="h-3 w-3 text-primary" />
-                              </button>
-                            </ScrollArea>
+                            <ScrollArea class="h-48 p-1"><button v-for="v in getFilteredVersions(clang.availableVersions)" :key="v" @click="clang.version = v" class="w-full flex items-center px-3 py-2 text-xs rounded-md hover:bg-accent font-mono mb-0.5"><span class="flex-1 truncate" :class="{ 'font-bold text-primary': clang.version === v }">{{ v }}</span><Check v-if="clang.version === v" class="h-3 w-3 text-primary" /></button></ScrollArea>
                           </PopoverContent>
                         </Popover>
-
-                        <Button variant="ghost" size="icon" class="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
-                          @click="removeLang(idx)">
-                          <X class="h-4 w-4" />
-                        </Button>
+                        <Button variant="ghost" size="icon" class="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0" @click="removeLang(idx)"><X class="h-4 w-4" /></Button>
                       </div>
-
-                      <Button variant="outline" size="sm" class="w-full h-9 text-xs border-dashed border-muted-foreground/30 text-muted-foreground hover:text-primary hover:border-primary/50 transition-all bg-muted/5 hover:bg-primary/5 rounded-xl"
-                        @click="addLang">
-                        <Plus class="h-4 w-4 mr-2" /> 添加运行时环境 (Mise)
-                      </Button>
+                      <Button variant="outline" size="sm" class="w-full h-9 text-xs border-dashed border-muted-foreground/30 text-muted-foreground hover:text-primary hover:border-primary/50 transition-all bg-muted/5 hover:bg-primary/5 rounded-xl" @click="addLang"><Plus class="h-4 w-4 mr-2" /> 添加运行时环境 (Mise)</Button>
                     </div>
                   </div>
                 </template>
-
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
-                  <Label class="sm:text-right text-xs text-muted-foreground uppercase tracking-wider font-semibold">执行命令</Label>
-                  <div class="sm:col-span-3 relative">
-                    <Input v-model="form.command" placeholder="例如: python main.py --args" 
-                      :class="cn('h-9 bg-muted/20 border-muted-foreground/15 transition-all focus:bg-background/50 pr-10', form.command ? 'font-mono text-sm tracking-tight font-medium' : 'text-[11px] font-normal')" />
-                    <Terminal class="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground opacity-40 pointer-events-none" />
-                  </div>
+                  <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold">执行命令</Label>
+                  <div class="sm:col-span-3 relative"><Input v-model="form.command" placeholder="例如: python main.py --args" :class="cn('h-9 bg-muted/20 border-muted-foreground/15 transition-all focus:bg-background/50 pr-10', form.command ? 'font-mono text-sm tracking-tight font-medium' : 'text-[11px] font-normal')" /><Terminal class="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground opacity-40 pointer-events-none" /></div>
                 </div>
-
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
-                  <Label class="sm:text-right text-xs text-muted-foreground uppercase tracking-wider font-semibold">工作目录</Label>
-                  <div class="sm:col-span-3">
-                    <DirTreeSelect v-if="selectedAgentId === 'local'" v-model="currentWorkDir" class="h-9" />
-                    <Input v-else v-model="currentWorkDir" placeholder="任务运行路径（留空取 Agent 默认值）" 
-                      :class="cn('h-9 bg-muted/20 border-muted-foreground/15 transition-all focus:bg-background/50', currentWorkDir ? 'font-mono text-sm tracking-tight font-medium' : 'text-[11px] font-normal')" />
-                  </div>
+                  <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold">工作目录</Label>
+                  <div class="sm:col-span-3"><DirTreeSelect v-if="selectedAgentId === 'local'" v-model="currentWorkDir" class="h-9" /><Input v-else v-model="currentWorkDir" placeholder="任务运行路径（留空取 Agent 默认值）" :class="cn('h-9 bg-muted/20 border-muted-foreground/15 transition-all focus:bg-background/50', currentWorkDir ? 'font-mono text-sm tracking-tight font-medium' : 'text-[11px] font-normal')" /></div>
                 </div>
-
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3 pb-1">
-                  <Label class="sm:text-right text-xs text-muted-foreground uppercase tracking-wider font-semibold">变量注入</Label>
-                  <div class="sm:col-span-3">
-                    <div class="flex items-center space-x-3 h-9">
-                      <div class="flex items-center space-x-2 bg-muted/10 px-3 py-1.5 rounded-full border border-muted-foreground/10 hover:bg-muted/20 transition-colors">
-                        <Switch :model-value="allEnvsEnabled" @update:model-value="onAllEnvsChange" id="all-envs" class="scale-90" />
-                        <Label for="all-envs" class="text-[11px] font-medium cursor-pointer">全量注入</Label>
-                      </div>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="ghost" size="icon" class="h-6 w-6 opacity-30 hover:opacity-100 hover:text-primary transition-all">
-                             <AlertCircle class="h-3.5 w-3.5" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent class="w-80 p-4 text-[12px] bg-background/95 backdrop-blur-md border-primary/20 shadow-2xl ring-1 ring-primary/5" align="start">
-                          <p class="font-bold text-xs uppercase tracking-tight text-primary mb-2">安全提示</p>
-                          <p class="text-muted-foreground leading-normal mb-2">
-                            开启此项后，<span class="text-foreground font-semibold">所有</span> 环境变量都将注入到进程中。
-                          </p>
-                          <div class="bg-destructive/10 border border-destructive/20 rounded-md p-2 text-destructive/80 text-[10px]">
-                            警告：这可能会暴露您的敏感密钥给不受信任的脚本。
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  </div>
+                  <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold">变量注入</Label>
+                  <div class="sm:col-span-3"><div class="flex items-center space-x-2 bg-muted/10 px-3 py-1.5 rounded-full border border-muted-foreground/10 w-fit"><Switch :model-value="allEnvsEnabled" @update:model-value="onAllEnvsChange" id="all-envs" class="scale-90" /><Label for="all-envs" class="text-[11px] font-medium cursor-pointer">全量注入</Label></div></div>
                 </div>
-
                 <div v-if="!allEnvsEnabled" class="grid grid-cols-1 sm:grid-cols-4 items-start gap-3">
-                  <Label class="sm:text-right text-xs text-muted-foreground uppercase tracking-wider pt-2.5">按需包含</Label>
+                  <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold pt-2.5">按需包含</Label>
                   <div class="sm:col-span-3 space-y-2">
-                    <Popover>
-                      <PopoverTrigger as-child>
-                        <Button variant="outline" class="w-full justify-between h-9 bg-muted/10 border-muted-foreground/15 hover:bg-muted/20 font-normal transition-colors group rounded-xl">
-                          <div class="flex items-center gap-2 text-muted-foreground group-hover:text-foreground">
-                            <Search class="h-3.5 w-3.5 opacity-40" />
-                            <span class="text-xs">选择关联的环境变量...</span>
-                          </div>
-                          <ChevronDown class="h-4 w-4 opacity-30" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent class="p-0 w-[400px]" align="start">
-                        <div class="p-3 border-b bg-muted/20">
-                          <div class="relative">
-                            <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
-                            <Input v-model="envSearchQuery" placeholder="搜索变量名或备注..." 
-                              :class="cn('pl-9 h-10 bg-background border-primary/20', envSearchQuery ? 'text-sm font-medium' : 'text-xs')" />
-                          </div>
-                        </div>
-                        <ScrollArea class="h-64 p-2">
-                          <div v-if="filteredEnvVars.length === 0" class="py-12 text-center text-xs text-muted-foreground flex flex-col items-center gap-2">
-                            <Search class="h-8 w-8 opacity-10" />
-                            未找到可用变量
-                          </div>
-                          <div v-for="env in filteredEnvVars" :key="env.id" @click.stop="addEnv(env.id)"
-                            class="flex flex-col p-3 rounded-lg hover:bg-primary/5 cursor-pointer transition-all border border-transparent hover:border-primary/10 mb-1 group">
-                            <div class="flex items-center justify-between mb-1">
-                              <div class="flex items-center gap-2">
-                                <span class="text-sm font-mono font-bold tracking-tight group-hover:text-primary transition-colors">{{ env.name }}</span>
-                                <span v-if="env.type === ENV_TYPE.SECRET" class="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-bold">
-                                  <Shield class="h-2.5 w-2.5" />
-                                  机密
-                                </span>
-                              </div>
-                              <Button variant="ghost" size="icon" class="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Plus class="h-4 w-4" />
-                              </Button>
-                            </div>
-                            <div class="text-[11px] text-muted-foreground line-clamp-1 opacity-70">{{ env.remark || "暂无备注" }}</div>
-                          </div>
-                        </ScrollArea>
-                      </PopoverContent>
+                    <Popover><PopoverTrigger as-child><Button variant="outline" class="w-full justify-between h-9 bg-muted/10 border-muted-foreground/15 text-xs rounded-xl"><span class="text-muted-foreground">选择关联的环境变量...</span><ChevronDown class="h-4 w-4 opacity-30" /></Button></PopoverTrigger>
+                      <PopoverContent class="p-0 w-[400px]" align="start"><ScrollArea class="h-64 p-2"><div v-for="env in filteredEnvVars" :key="env.id" @click.stop="addEnv(env.id)" class="p-3 rounded-lg hover:bg-primary/5 cursor-pointer text-sm font-mono font-bold">{{ env.name }}</div></ScrollArea></PopoverContent>
                     </Popover>
-
-                    <div v-if="selectedEnvs.length > 0" class="flex flex-wrap gap-2 p-3 rounded-xl bg-muted/10 border border-muted-foreground/10 min-h-12">
-                      <div v-for="env in selectedEnvs" :key="env?.id"
-                        class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-background border border-muted-foreground/15 text-[11px] group shadow-sm transition-all hover:border-primary/30">
-                        <Shield v-if="env?.type === ENV_TYPE.SECRET" class="h-3 w-3 text-amber-500" />
-                        <span class="font-mono font-medium opacity-80">{{ env?.name }}</span>
-                        <Button variant="ghost" size="icon" class="h-4 w-4 rounded-full p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                          @click="removeEnv(env!.id)">
-                          <X class="h-2.5 w-2.5" />
-                        </Button>
-                      </div>
-                    </div>
+                    <div v-if="selectedEnvs.length > 0" class="flex flex-wrap gap-2 p-3 rounded-xl bg-muted/10 border border-muted-foreground/10 min-h-12"><div v-for="env in selectedEnvs" :key="env?.id" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-background border border-muted-foreground/15 text-[11px] font-mono font-medium">{{ env?.name }}<X class="h-2.5 w-2.5 cursor-pointer" @click="removeEnv(env!.id)" /></div></div>
                   </div>
                 </div>
               </div>
             </section>
 
-            <!-- 调度与策略 Section -->
+            <!-- 调度策略 Section -->
             <section class="space-y-4">
-              <div class="flex items-center gap-2 mb-1">
+              <div class="flex items-center gap-2 mb-2">
                 <div class="h-4 w-1 bg-primary rounded-full shadow-sm shadow-primary/20" />
                 <h3 class="text-sm font-bold text-foreground/90">调度策略</h3>
               </div>
-
               <div class="grid gap-5 pl-3 border-l border-muted">
                 <template v-if="selectedTriggerType === TRIGGER_TYPE.CRON">
                   <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
-                    <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-semibold">定时规则</Label>
+                    <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold">定时规则</Label>
                     <div class="sm:col-span-3">
-                      <Input v-model="form.schedule" placeholder="秒 分 时 日 月 周 (必须 6 位)" 
-                        :class="cn('h-9 bg-muted/20 border-muted-foreground/15 transition-all focus:ring-1 focus:ring-primary/40 focus:border-primary/40', form.schedule ? 'font-mono text-sm tracking-[0.1em] font-medium' : 'text-[11px] font-normal')" />
-                      
-                      <div v-if="form.schedule && !isCronValid" class="mt-2 text-[10px] text-destructive flex items-center gap-1.5 font-medium animate-in fade-in slide-in-from-top-1 duration-300">
-                        <AlertCircle class="h-3 w-3" /> 表达式位数错误: 必须为 6 位 (秒 分 时 日 月 周)
-                      </div>
-
-                      <div v-if="cronDescription" class="mt-2.5 p-2 px-3 rounded-xl bg-primary/5 border border-primary/10 text-[11px] text-primary/80 font-medium flex items-center gap-2.5 animate-in fade-in slide-in-from-top-1 duration-300 shadow-sm shadow-primary/5">
-                        <div class="p-1 rounded-full bg-primary/10">
-                          <Zap class="h-3 w-3 text-primary animate-pulse" />
-                        </div>
-                        {{ cronDescription }}
-                      </div>
-
-                      <div class="mt-3 space-y-2.5">
-                        <div class="flex items-center gap-2 text-[10px] text-muted-foreground/50 uppercase font-bold tracking-widest pl-0.5">
-                          <Clock class="h-2.5 w-2.5" /> 格式指导: 秒 分 时 日 月 周
-                        </div>
-                        <div class="flex flex-wrap gap-1.5">
-                          <button v-for="preset in cronPresets" :key="preset.value"
-                            class="px-2.5 py-1 text-[10px] rounded-lg bg-muted/30 border border-transparent hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition-all font-medium active:scale-95"
-                            @click.prevent="form.schedule = preset.value">
-                            {{ preset.label }}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
-                    <Label class="sm:text-right text-xs text-muted-foreground uppercase tracking-wider font-semibold">随机延迟</Label>
-                    <div class="sm:col-span-3 flex items-center gap-4">
-                      <div class="flex items-center gap-2 group">
-                        <Input :model-value="form.random_range" @update:model-value="v => form.random_range = Number(v || 0)" type="number" :min="0" 
-                          :class="cn('w-20 h-9 bg-muted/20 border-muted-foreground/15 text-center transition-all', form.random_range ? 'font-mono text-sm font-bold' : 'text-xs')" />
-                        <span class="text-xs font-semibold text-muted-foreground">秒</span>
-                      </div>
-                      <div class="flex-1 text-[11px] text-muted-foreground leading-snug p-2 rounded-lg bg-blue-500/5 border border-blue-500/10 italic">
-                        在运行点后 0 ~ {{ form.random_range || 0 }}s 随机触发
-                      </div>
+                      <Input v-model="form.schedule" placeholder="秒 分 时 日 月 周 (必须 6 位)" :class="cn('h-9 bg-muted/20 border-muted-foreground/15 transition-all focus:ring-1 focus:ring-primary/40 focus:border-primary/40', form.schedule ? 'font-mono text-sm tracking-[0.1em] font-medium' : 'text-[11px] font-normal')" />
+                      <div v-if="cronDescription" class="mt-2.5 p-2 px-3 rounded-xl bg-primary/5 border border-primary/10 text-[11px] text-primary/80 font-medium flex items-center gap-2.5"><Zap class="h-3 w-3 text-primary" />{{ cronDescription }}</div>
+                      <div class="mt-3 flex flex-wrap gap-1.5"><button v-for="preset in cronPresets" :key="preset.value" class="px-2.5 py-1 text-[10px] rounded-lg bg-muted/30 border border-transparent hover:border-primary/30 hover:bg-primary/5 font-medium" @click.prevent="form.schedule = preset.value">{{ preset.label }}</button></div>
                     </div>
                   </div>
                 </template>
-
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
-                  <Label class="sm:text-right text-xs text-muted-foreground uppercase tracking-wider">失败策略</Label>
+                  <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold">失败策略</Label>
                   <div class="sm:col-span-3 flex items-center gap-3">
-                    <div class="flex items-center gap-2 flex-1">
-                      <span class="text-[11px] text-muted-foreground mr-1 whitespace-nowrap">重试</span>
-                      <Input :model-value="form.retry_count" @update:model-value="v => form.retry_count = Number(v || 0)" type="number" :min="0" 
-                        :class="cn('w-20 h-9 bg-muted/20 border-muted-foreground/15 text-center rounded-lg', form.retry_count ? 'font-mono text-sm font-bold' : 'text-xs')" />
-                      <span class="text-[11px] text-muted-foreground whitespace-nowrap ml-1">次</span>
-                    </div>
-                    <div class="flex items-center gap-2 flex-1" v-if="form.retry_count && form.retry_count > 0">
-                      <span class="text-[11px] text-muted-foreground mr-1 whitespace-nowrap">间隔</span>
-                      <Input :model-value="form.retry_interval" @update:model-value="v => form.retry_interval = Number(v || 0)" type="number" :min="0" 
-                        :class="cn('w-20 h-9 bg-muted/20 border-muted-foreground/15 text-center rounded-lg', form.retry_interval ? 'font-mono text-sm font-bold' : 'text-xs')" />
-                      <span class="text-[11px] text-muted-foreground whitespace-nowrap ml-1">秒</span>
-                    </div>
+                    <span class="text-[11px] text-muted-foreground">重试</span>
+                    <Input :model-value="form.retry_count" @update:model-value="v => form.retry_count = Number(v)" type="number" :min="0" class="w-20 h-9 bg-muted/20 border-muted-foreground/15 text-center font-bold" />
+                    <span class="text-[11px] text-muted-foreground">次</span>
                   </div>
                 </div>
-
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-start gap-3">
-                  <Label class="sm:text-right text-xs text-muted-foreground uppercase tracking-wider pt-2.5">运行策略</Label>
-                  <div class="sm:col-span-3 space-y-4">
-                    <!-- 超时与日志 -->
-                    <div class="flex items-center gap-4">
-                      <div class="flex items-center gap-2">
-                         <Input :model-value="form.timeout" @update:model-value="v => form.timeout = Number(v || 0)" type="number" :min="0" 
-                          :class="cn('w-20 h-9 bg-muted/20 border-muted-foreground/15 text-center rounded-lg', form.timeout ? 'font-mono text-sm font-bold' : 'text-xs')" />
-                         <span class="text-[11px] font-semibold text-muted-foreground">分钟超时</span>
-                      </div>
-                      <div class="flex items-center gap-2 pl-4 border-l">
-                        <Select :model-value="cleanType" @update:model-value="(v) => cleanType = String(v || 'none')">
-                          <SelectTrigger class="w-28 h-9 text-xs bg-muted/10 border-muted-foreground/10 rounded-lg">
-                            <SelectValue placeholder="日志策略" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">不限制</SelectItem>
-                            <SelectItem value="day">按天保存</SelectItem>
-                            <SelectItem value="count">按条保存</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Input v-if="cleanType && cleanType !== 'none'" :model-value="cleanKeep" @update:model-value="v => cleanKeep = Number(v || 30)" type="number"
-                          :class="cn('w-16 h-9 bg-muted/20 border-muted-foreground/15 text-center rounded-lg', cleanKeep ? 'font-mono text-sm font-bold' : 'text-xs')" />
-                      </div>
-                    </div>
-
-                    <!-- 并发控制 -->
-                    <div class="p-3 rounded-xl bg-muted/10 border border-muted-foreground/10 space-y-2">
-                      <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-tighter">
-                          <Zap :class="cn('h-3.5 w-3.5', concurrencyEnabled ? 'text-primary' : 'text-muted-foreground/30')" /> 
-                          任务并发控制
-                        </div>
-                        <Switch :model-value="concurrencyEnabled" @update:model-value="onConcurrencyChange" class="scale-90" />
-                      </div>
-                      <p class="text-[11px] text-muted-foreground/70 leading-relaxed italic">
-                        {{ concurrencyEnabled ? '允许多个副本同时执行。' : '正在执行时，拦截后续触发。' }}
-                      </p>
+                  <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold pt-2.5">运行策略</Label>
+                  <div class="sm:col-span-3 flex items-center gap-4">
+                    <div class="flex items-center gap-2">
+                      <Input :model-value="form.timeout" @update:model-value="v => form.timeout = Number(v)" type="number" :min="0" class="w-20 h-9 bg-muted/20 border-muted-foreground/15 text-center font-bold" />
+                      <span class="text-[11px] font-semibold text-muted-foreground">分钟超时</span>
                     </div>
                   </div>
                 </div>
               </div>
             </section>
-            <!-- 通知配置 -->
             <TaskNotificationConfig ref="notificationConfigRef" :task-id="isEdit ? task?.id : undefined" />
           </div>
         </ScrollArea>
-
-      <div class="flex items-center justify-between px-6 py-4 bg-muted/20 border-t shrink-0 backdrop-blur-sm">
-        <p class="text-[10px] text-muted-foreground/50 italic">最后编辑于: {{ isEdit ? (form.updated_at || '刚才') : '现在' }}</p>
-        <div class="flex gap-3">
-          <Button variant="ghost" size="sm" class="hover:bg-muted font-medium text-xs px-6" @click="emit('update:open', false)">取消</Button>
-          <Button size="sm" class="px-8 font-semibold text-xs shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] bg-primary hover:bg-primary/90" @click="save">
-            确定保存
-          </Button>
+        <div class="flex items-center justify-between px-6 py-4 bg-muted/20 border-t shrink-0 backdrop-blur-sm">
+          <p class="text-[10px] text-muted-foreground/50 italic">最后编辑于: {{ isEdit ? (form.updated_at || '刚才') : '现在' }}</p>
+          <div class="flex gap-3">
+            <Button variant="ghost" size="sm" class="hover:bg-muted font-medium text-xs px-6" @click="emit('update:open', false)">取消</Button>
+            <Button size="sm" class="px-8 font-semibold text-xs shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90" @click="save">确定保存</Button>
+          </div>
         </div>
       </div>
-    </div>
-  </DialogContent>
-</Dialog>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <style scoped>
-/* 仅针对任务编辑页面的字体渲染优化 */
 :deep(*) {
-  -webkit-font-smoothing: auto !important;
-  -moz-osx-font-smoothing: auto !important;
-  letter-spacing: 0 !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-
-:deep(label), :deep(h3), :deep(input) {
+:deep(label) {
   text-rendering: optimizeLegibility;
+  letter-spacing: 0.02em;
 }
 </style>
+

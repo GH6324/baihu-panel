@@ -125,17 +125,17 @@ defineExpose({
 
 <template>
   <section class="space-y-4">
-    <div class="flex items-center gap-2 mb-1">
-      <div class="h-4 w-1 bg-primary rounded-full" />
-      <h3 class="text-sm font-semibold text-foreground/80">通知配置</h3>
+    <div class="flex items-center gap-2 mb-2">
+      <div class="h-4 w-1 bg-primary rounded-full shadow-sm shadow-primary/20" />
+      <h3 class="text-sm font-bold text-foreground/90">通知配置</h3>
     </div>
 
-    <div class="grid gap-4 pl-3 border-l border-muted">
+    <div class="grid gap-5 pl-3 border-l border-muted">
       <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
-        <Label class="sm:text-right text-xs text-muted-foreground uppercase tracking-wider">通知渠道</Label>
+        <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold">通知渠道</Label>
         <div class="sm:col-span-3">
           <Select v-model="notifyWayId">
-            <SelectTrigger class="h-9 bg-muted/30 border-muted-foreground/20">
+            <SelectTrigger class="h-9 bg-muted/20 border-muted-foreground/15 transition-all focus:bg-background/50">
               <SelectValue placeholder="不启用通知" />
             </SelectTrigger>
             <SelectContent>
@@ -150,40 +150,40 @@ defineExpose({
 
       <template v-if="notifyWayId !== 'none'">
         <div class="grid grid-cols-1 sm:grid-cols-4 items-start gap-3">
-          <Label class="sm:text-right text-xs text-muted-foreground uppercase tracking-wider pt-1.5">通知时机</Label>
+          <Label class="sm:text-right text-[11px] text-foreground/70 uppercase tracking-wider font-bold pt-2.5">通知时机</Label>
           <div class="sm:col-span-3 space-y-3">
-            <div class="flex flex-wrap gap-4 p-3 rounded-lg bg-muted/20 border border-muted-foreground/10 items-center">
+            <div class="flex flex-wrap gap-4 p-3 rounded-lg bg-muted/20 border border-muted-foreground/10 items-center transition-all hover:bg-muted/30">
               <div class="flex items-center gap-2 group">
-                <Checkbox :id="`ns-${taskId || 'new'}`" v-model="notifyOnSuccess" />
-                <label :for="`ns-${taskId || 'new'}`" class="text-xs shrink-0 cursor-pointer group-hover:text-primary transition-colors">成功时</label>
+                <Checkbox :id="`ns-${taskId || 'new'}`" v-model="notifyOnSuccess" class="border-muted-foreground/30 data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
+                <label :for="`ns-${taskId || 'new'}`" class="text-xs font-medium shrink-0 cursor-pointer group-hover:text-primary transition-colors text-foreground/80">成功时</label>
               </div>
               <div class="flex items-center gap-2 group">
-                <Checkbox :id="`nf-${taskId || 'new'}`" v-model="notifyOnFailure" />
-                <label :for="`nf-${taskId || 'new'}`" class="text-xs shrink-0 cursor-pointer group-hover:text-primary transition-colors">失败时</label>
+                <Checkbox :id="`nf-${taskId || 'new'}`" v-model="notifyOnFailure" class="border-muted-foreground/30 data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
+                <label :for="`nf-${taskId || 'new'}`" class="text-xs font-medium shrink-0 cursor-pointer group-hover:text-primary transition-colors text-foreground/80">失败时</label>
               </div>
               <div class="flex items-center gap-2 group">
-                <Checkbox :id="`nt-${taskId || 'new'}`" v-model="notifyOnTimeout" />
-                <label :for="`nt-${taskId || 'new'}`" class="text-xs shrink-0 cursor-pointer group-hover:text-primary transition-colors">超时时</label>
+                <Checkbox :id="`nt-${taskId || 'new'}`" v-model="notifyOnTimeout" class="border-muted-foreground/30 data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
+                <label :for="`nt-${taskId || 'new'}`" class="text-xs font-medium shrink-0 cursor-pointer group-hover:text-primary transition-colors text-foreground/80">超时时</label>
               </div>
             </div>
 
-            <div class="p-3 rounded-xl bg-primary/5 border border-primary/10 space-y-3">
+            <div class="p-3 rounded-xl bg-primary/5 border border-primary/10 space-y-3 transition-all hover:bg-primary/10">
               <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2 text-xs font-semibold">
-                  <Bell :class="cn('h-3.5 w-3.5', notifyIncludeLog ? 'text-primary' : 'text-muted-foreground')" />
+                <div class="flex items-center gap-2 text-xs font-bold text-foreground/90">
+                  <Bell :class="cn('h-3.5 w-3.5 transition-colors', notifyIncludeLog ? 'text-primary' : 'text-muted-foreground/50')" />
                   附带执行日志
                 </div>
-                <Switch v-model="notifyIncludeLog" />
+                <Switch v-model="notifyIncludeLog" class="data-[state=checked]:bg-primary" />
               </div>
               
               <div v-if="notifyIncludeLog" class="flex items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-200 pl-5">
-                <div class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-background/60 border border-muted-foreground/10 focus-within:border-primary/30 transition-all shadow-sm">
-                  <span class="text-[10px] text-muted-foreground opacity-60 whitespace-nowrap">长度限制</span>
-                  <div class="h-3 w-[1px] bg-muted-foreground/10" />
+                <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/80 border border-primary/20 shadow-sm transition-all focus-within:ring-2 focus-within:ring-primary/20">
+                  <span class="text-[10px] text-foreground/60 font-medium whitespace-nowrap uppercase tracking-tighter">长度限制</span>
+                  <div class="h-3 w-[1px] bg-muted-foreground/20" />
                   <div class="flex items-center gap-1">
                     <input type="text" inputmode="numeric" :value="notifyLogLimit" @input="(e: any) => notifyLogLimit = Number(e.target.value.replace(/\D/g, ''))" 
-                      class="w-14 h-4 text-center text-[11px] font-mono bg-transparent border-none outline-none focus:ring-0 p-0" />
-                    <span class="text-[10px] text-muted-foreground opacity-40">字</span>
+                      class="w-16 h-4 text-center text-[11px] font-bold font-mono bg-transparent border-none outline-none focus:ring-0 p-0 text-primary" />
+                    <span class="text-[10px] text-foreground/40 font-bold">字</span>
                   </div>
                 </div>
               </div>
@@ -194,3 +194,15 @@ defineExpose({
     </div>
   </section>
 </template>
+
+<style scoped>
+:deep(*) {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+:deep(label) {
+  text-rendering: optimizeLegibility;
+  letter-spacing: 0.01em;
+}
+</style>
+
