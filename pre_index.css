@@ -561,7 +561,6 @@ input[type="time"]:hover::-webkit-calendar-picker-indicator {
 
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
   background: oklch(0.5 0 0 / 40%);
-  border-radius: 3px;
 }
 
 .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
