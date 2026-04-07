@@ -590,25 +590,41 @@ async function save() {
                   <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
                     <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold">定时规则</Label>
                     <div class="sm:col-span-3">
-                      <Input v-model="form.schedule" placeholder="秒 分 时 日 月 周 (必须 6 位)" :class="cn('h-9 bg-muted/20 border-muted-foreground/15 transition-all focus:ring-1 focus:ring-primary/40 focus:border-primary/40', form.schedule ? 'font-mono text-sm tracking-[0.1em] font-medium' : 'text-[11px] font-normal')" />
+                      <Input v-model="form.schedule" placeholder="秒 分 时 日 月 周 (必须 6 位)" :class="cn('h-9 bg-muted/30 border-muted-foreground/20 transition-all focus:ring-1 focus:ring-primary/40 focus:border-primary/40', form.schedule ? 'font-mono text-sm tracking-[0.1em] font-medium' : 'text-[11px] font-normal')" />
                       <div v-if="cronDescription" class="mt-2.5 p-2 px-3 rounded-xl bg-primary/5 border border-primary/10 text-[11px] text-primary/80 font-medium flex items-center gap-2.5"><Zap class="h-3 w-3 text-primary" />{{ cronDescription }}</div>
-                      <div class="mt-3 flex flex-wrap gap-1.5"><button v-for="preset in cronPresets" :key="preset.value" class="px-2.5 py-1 text-[10px] rounded-lg bg-muted/30 border border-transparent hover:border-primary/30 hover:bg-primary/5 font-medium" @click.prevent="form.schedule = preset.value">{{ preset.label }}</button></div>
+                      <div class="mt-3 flex flex-wrap gap-1.5"><button v-for="preset in cronPresets" :key="preset.value" class="px-2.5 py-1 text-[10px] rounded-lg bg-muted/50 border border-muted-foreground/10 hover:border-primary/50 hover:bg-primary/5 hover:text-primary transition-all font-medium" @click.prevent="form.schedule = preset.value">{{ preset.label }}</button></div>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
+                    <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold">随机延迟</Label>
+                    <div class="sm:col-span-3 flex items-center gap-4">
+                      <div class="flex items-center gap-2">
+                        <Input :model-value="form.random_range" @update:model-value="(v: string | number) => form.random_range = Number(v || 0)" type="number" :min="0" class="w-20 h-9 bg-muted/30 text-center font-bold" />
+                        <span class="text-xs font-semibold text-muted-foreground">秒</span>
+                      </div>
+                      <div class="flex-1 text-[11px] text-muted-foreground leading-snug p-2 rounded-lg bg-blue-500/5 border border-blue-500/10 italic">
+                        避免高频并发，在基准时间点后延迟 0~{{ form.random_range || 0 }}s
+                      </div>
                     </div>
                   </div>
                 </template>
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
                   <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold">失败策略</Label>
-                  <div class="sm:col-span-3 flex items-center gap-3">
-                    <span class="text-[11px] text-muted-foreground">重试</span>
-                    <Input :model-value="form.retry_count" @update:model-value="(v: string | number) => form.retry_count = Number(v)" type="number" :min="0" class="w-20 h-9 bg-muted/20 border-muted-foreground/15 text-center font-bold" />
-                    <span class="text-[11px] text-muted-foreground">次</span>
+                  <div class="sm:col-span-3 flex items-center gap-4">
+                    <div class="flex items-center gap-2">
+                       <span class="text-[11px] text-muted-foreground font-semibold">重试</span>
+                       <Input :model-value="form.retry_count" @update:model-value="(v: string | number) => form.retry_count = Number(v)" type="number" :min="0" class="w-16 h-9 bg-muted/30 text-center font-bold" />
+                       <span class="text-[11px] text-muted-foreground font-semibold">次，间隔</span>
+                       <Input :model-value="form.retry_interval" @update:model-value="(v: string | number) => form.retry_interval = Number(v)" type="number" :min="0" class="w-16 h-9 bg-muted/30 text-center font-bold" />
+                       <span class="text-[11px] text-muted-foreground font-semibold">秒</span>
+                    </div>
                   </div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
                   <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-bold">运行策略</Label>
                   <div class="sm:col-span-3 flex items-center gap-3">
-                    <Input :model-value="form.timeout" @update:model-value="(v: string | number) => form.timeout = Number(v)" type="number" :min="0" class="w-20 h-9 bg-muted/20 border-muted-foreground/15 text-center font-bold" />
-                    <span class="text-[11px] text-muted-foreground">分钟超时</span>
+                    <Input :model-value="form.timeout" @update:model-value="(v: string | number) => form.timeout = Number(v)" type="number" :min="0" class="w-20 h-9 bg-muted/30 text-center font-bold" />
+                    <span class="text-[11px] font-semibold text-muted-foreground">分钟超时</span>
                   </div>
                 </div>
               </div>
