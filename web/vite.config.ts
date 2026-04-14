@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 import { viteStaticCopy } from 'vite-plugin-static-copy'
+import { VitePWA } from 'vite-plugin-pwa'
 import { fileURLToPath, URL } from 'node:url'
 import { writeFileSync, readFileSync, readdirSync, statSync, existsSync, unlinkSync } from 'node:fs'
 import { join, resolve } from 'node:path'
@@ -55,7 +56,44 @@ export default defineConfig({
         }
       ]
     }),
-    compressionPlugin()
+    compressionPlugin(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      injectRegister: 'auto',
+      includeAssets: ['favicon.ico', 'logo.svg', 'pwa-icon-192.png', 'pwa-icon-512.png'],
+      manifest: {
+        name: 'Baihu Panel',
+        short_name: 'Baihu',
+        description: '白虎面板 - 现代化的服务器管理面板',
+        theme_color: '#ffffff',
+        background_color: '#ffffff',
+        display: 'standalone',
+        icons: [
+          {
+            src: 'pwa-icon-192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: 'pwa-icon-512.png',
+            sizes: '512x512',
+            type: 'image/png'
+          },
+          {
+            src: 'pwa-icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
+          }
+        ]
+      },
+      workbox: {
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024 // 10MB to allow monaco-editor files
+      },
+      devOptions: {
+        enabled: true
+      }
+    })
   ],
   resolve: {
     alias: {

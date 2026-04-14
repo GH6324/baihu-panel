@@ -83,6 +83,36 @@ func initStaticRoutes(root *gin.RouterGroup) {
 	root.GET("/logo.svg", func(ctx *gin.Context) {
 		serveSingleFile(ctx, "logo.svg", "image/svg+xml", "public, max-age=86400")
 	})
+
+	// PWA 相关路由处理
+	initPWARoutes(root)
+}
+
+func initPWARoutes(root *gin.RouterGroup) {
+	// PWA 相关文件处理
+	pwaRootFiles := map[string]string{
+		"/sw.js":                "application/javascript",
+		"/registerSW.js":        "application/javascript",
+		"/manifest.webmanifest": "application/manifest+json",
+		"/favicon.ico":          "image/x-icon",
+		"/pwa-icon-192.png":     "image/png",
+		"/pwa-icon-512.png":     "image/png",
+	}
+
+	for path, contentType := range pwaRootFiles {
+		pPath := path
+		pType := contentType
+		root.GET(pPath, func(ctx *gin.Context) {
+			file := strings.TrimPrefix(pPath, "/")
+			serveSingleFile(ctx, file, pType, "public, no-cache")
+		})
+	}
+
+	// 动态匹配 workbox-*.js (Vite PWA 生成的库文件)
+	root.GET("/workbox-:hash.js", func(ctx *gin.Context) {
+		file := "workbox-" + ctx.Param("hash") + ".js"
+		serveSingleFile(ctx, file, "application/javascript", "public, max-age=31536000, immutable")
+	})
 }
 
 func serveSingleFile(ctx *gin.Context, filename string, contentType string, cache string) {
