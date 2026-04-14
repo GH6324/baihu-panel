@@ -109,14 +109,17 @@ function updateConfigField(key: string, value: string) {
               </Label>
               <div class="col-span-3">
                 <Input
-                  v-if="!field.type || field.type !== 'textarea'"
+                  v-if="!field.type"
                   :model-value="channel.config?.[field.key] || ''"
                   @update:model-value="updateConfigField(field.key, String($event))"
                   :placeholder="field.placeholder || ''"
                   class="text-sm"
                 />
+                <div v-else-if="field.type === 'note'" class="text-xs text-muted-foreground pt-2">
+                  {{ field.placeholder || '' }}
+                </div>
                 <textarea
-                  v-else
+                  v-else-if="field.type === 'textarea'"
                   :value="channel.config?.[field.key] || ''"
                   @input="(e: Event) => updateConfigField(field.key, (e.target as HTMLTextAreaElement).value)"
                   :placeholder="field.placeholder || ''"

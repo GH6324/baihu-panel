@@ -73,4 +73,5 @@ const (
 	ChannelNtfy            = "Ntfy"
 	ChannelGotify          = "Gotify"
 	ChannelPushPlus        = "PushPlus"
+	ChannelVoceChat        = "VoceChat"
 )

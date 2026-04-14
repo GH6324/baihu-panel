@@ -117,6 +117,13 @@ const channelConfigFields: Record<string, { key: string; label: string; required
     { key: 'callback_url', label: '回调地址', required: false },
     { key: 'to', label: '好友令牌', required: false },
   ],
+  VoceChat: [
+    { key: 'server', label: '服务地址', required: true, placeholder: 'https://vocechat.yourdomain.com' },
+    { key: 'api_key', label: 'API Key', required: true, placeholder: 'Bot API Key' },
+    { key: 'target_id', label: '目标 ID', required: true, placeholder: 'uid 或 gid' },
+    { key: 'target_type', label: '目标类型', required: false, placeholder: 'user (默认) / group' },
+    { key: 'note', label: '说明', required: false, placeholder: '当前仅支持 text/plain', type: 'note' },
+  ],
 }
 
 // 加载数据
