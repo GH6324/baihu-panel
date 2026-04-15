@@ -212,9 +212,9 @@ onMounted(loadLogs)
         </div>
 
         <!-- IP 地理位置弹窗 -->
-        <BaihuDialog v-model:open="ipDialogOpen" title="IP 详情信息">
+        <BaihuDialog v-model:open="ipDialogOpen" title="IP 详情">
             <template #description>
-                <code class="text-[10px] bg-muted px-2 py-0.5 rounded-md font-mono">{{ selectedIp }}</code>
+                <code class="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded font-mono tracking-wider">{{ selectedIp }}</code>
             </template>
 
             <div v-if="ipGeoLoading" class="flex items-center justify-center py-12">
@@ -241,9 +241,12 @@ onMounted(loadLogs)
                         <span class="text-muted-foreground shrink-0">组织</span>
                         <span class="font-medium truncate text-right">{{ ipGeoInfo.organization || '-' }}</span>
                     </div>
-                    <div class="flex justify-between items-center text-sm gap-2">
-                        <span class="text-muted-foreground shrink-0">ASN</span>
-                        <span class="font-medium truncate text-right">{{ ipGeoInfo.asn }} - {{ ipGeoInfo.asn_organization || '-' }}</span>
+                    <div class="flex justify-between items-start text-sm gap-2">
+                        <span class="text-muted-foreground shrink-0 mt-0.5">ASN</span>
+                        <div class="text-right min-w-0">
+                            <div class="font-medium font-mono text-xs text-primary/80">AS{{ ipGeoInfo.asn }}</div>
+                            <div class="text-xs text-muted-foreground truncate" :title="ipGeoInfo.asn_organization">{{ ipGeoInfo.asn_organization || '-' }}</div>
+                        </div>
                     </div>
                 </div>
 

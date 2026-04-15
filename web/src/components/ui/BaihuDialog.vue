@@ -5,7 +5,6 @@ import { computed } from 'vue'
 import { 
   Dialog, 
   DialogContent, 
-  DialogHeader, 
   DialogTitle, 
   DialogDescription,
   DialogClose
@@ -56,26 +55,27 @@ const sizeClasses = {
         'transition-all duration-300'
       ]"
     >
-      <!-- 统一的 Header 风格 (参考日志详情) -->
-      <div class="flex items-center justify-between px-4 h-11 border-b bg-muted/20 shrink-0">
-        <DialogHeader class="space-y-1 text-left flex-1 min-w-0">
-          <div class="flex items-center gap-2">
-            <component :is="iconComponent" v-if="iconComponent" class="h-4 w-4 text-primary shrink-0" />
-            <DialogTitle class="text-[13px] font-normal text-muted-foreground tracking-wide truncate">
-              {{ title }}
-            </DialogTitle>
-          </div>
-          <DialogDescription v-if="description || $slots.description" class="text-xs text-muted-foreground/60 leading-relaxed truncate">
+      <!-- 统一的 Header 风格 -->
+      <div class="flex items-center px-4 h-11 border-b bg-muted/20 shrink-0 gap-2 overflow-hidden">
+        <!-- 图标 -->
+        <component :is="iconComponent" v-if="iconComponent" class="h-4 w-4 text-primary shrink-0" />
+        <!-- 标题 (a11y 语义) -->
+        <DialogTitle class="text-[13px] font-normal text-muted-foreground tracking-wide shrink-0 whitespace-nowrap">
+          {{ title }}
+        </DialogTitle>
+        <!-- 描述 / 副标题插槽 (占满剩余宽度，截断溢出) -->
+        <div class="flex-1 min-w-0 overflow-hidden">
+          <DialogDescription v-if="description || $slots.description" class="truncate text-xs leading-none">
             <slot name="description">{{ description }}</slot>
           </DialogDescription>
           <DialogDescription v-else class="sr-only">
             {{ title || '提示对话框' }}
           </DialogDescription>
-        </DialogHeader>
-
-        <DialogClose 
+        </div>
+        <!-- 关闭按钮 -->
+        <DialogClose
           v-if="showClose"
-          class="h-7 w-7 rounded-md opacity-70 transition-all hover:opacity-100 hover:bg-muted flex items-center justify-center -mr-1"
+          class="h-7 w-7 rounded-md opacity-70 transition-all hover:opacity-100 hover:bg-muted flex items-center justify-center shrink-0 ml-auto -mr-1"
         >
           <X class="h-4 w-4 text-muted-foreground" />
           <span class="sr-only">关闭</span>
