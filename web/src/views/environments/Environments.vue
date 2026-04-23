@@ -16,6 +16,7 @@ import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ENV_TYPE } from '@/constants'
 import { format } from 'date-fns'
+import { Badge } from '@/components/ui/badge'
 
 function formatDate(dateStr?: string) {
   if (!dateStr) return '-'
@@ -243,6 +244,11 @@ function maskValue(value: string) {
   return '•'.repeat(Math.min(value.length, 20))
 }
 
+const NOTIFY_ENV_KEYS = ['BHPKG_NOTIFY_TOKEN', 'BHPKG_NOTIFY_CHANNEL', 'BHPKG_NOTIFY_URL']
+function isNotifyEnv(name: string) {
+  return NOTIFY_ENV_KEYS.includes(name)
+}
+
 onMounted(() => {
   if (activeTab.value === ENV_TYPE.SECRET) {
     checkSecretStatus()
@@ -319,8 +325,9 @@ onBeforeUnmount(() => {
           class="sm:hidden p-3 hover:bg-muted/50 transition-colors">
           <div class="flex items-start justify-between mb-2">
             <div class="flex items-center gap-2 flex-1 min-w-0 pr-2">
-              <span class="text-xs text-muted-foreground shrink-0 tabular-nums">#{{ total - (currentPage - 1) * pageSize - index }}</span>
-              <code class="font-bold text-xs bg-muted/60 px-2 py-0.5 rounded break-all truncate">{{ env.name }}</code>
+              <span class="text-[10px] text-muted-foreground shrink-0 tabular-nums opacity-60">#{{ total - (currentPage - 1) * pageSize - index }}</span>
+              <code class="font-bold text-xs bg-muted/60 px-2 py-0.5 rounded truncate max-w-[120px] sm:max-w-none text-zinc-700 dark:text-zinc-200">{{ env.name }}</code>
+              <Badge v-if="isNotifyEnv(env.name)" variant="secondary" class="shrink-0 text-[8px] h-3.5 px-1 rounded-sm uppercase font-bold tracking-tighter leading-none">Built-in</Badge>
             </div>
             <span class="cursor-pointer group shrink-0"
               @click="toggleEnabled(env)" :title="env.enabled ? '已启用' : '已禁用'">
@@ -374,8 +381,10 @@ onBeforeUnmount(() => {
           <div class="w-12 shrink-0 pl-1">
             <span class="text-muted-foreground text-xs tabular-nums">#{{ total - (currentPage - 1) * pageSize - index }}</span>
           </div>
-          <code
-            class="w-32 sm:w-48 font-medium truncate shrink-0 text-xs bg-muted/40 px-2 py-1 rounded">{{ env.name }}</code>
+          <div class="w-32 sm:w-48 shrink-0 flex items-center gap-1 overflow-hidden pr-2">
+            <code class="font-medium truncate text-[11px] bg-muted/50 px-2 py-0.5 rounded text-zinc-600 dark:text-zinc-300">{{ env.name }}</code>
+            <Badge v-if="isNotifyEnv(env.name)" variant="secondary" class="text-[8px] h-3.5 px-1 rounded-sm uppercase font-bold tracking-tighter shrink-0 border-zinc-200/50 dark:border-zinc-700/50 leading-none">Built-in</Badge>
+          </div>
           <span class="flex-1 min-w-0 text-muted-foreground truncate text-xs px-1">
             <TextOverflow :text="showValues[env.id] ? env.value : maskValue(env.value)" title="查看值" />
           </span>
