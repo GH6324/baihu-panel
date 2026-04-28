@@ -2,10 +2,12 @@ package utils
 
 import (
 	"fmt"
+	"sync"
 )
 
 // TailBuffer 是一个只保留最后 N 字节数据的缓冲区
 type TailBuffer struct {
+	mu    sync.Mutex
 	limit int
 	data  []byte
 	size  int // 当前实际存储的大小
@@ -22,6 +24,9 @@ func NewTailBuffer(limit int) *TailBuffer {
 
 // Write 实现 io.Writer 接口
 func (b *TailBuffer) Write(p []byte) (n int, err error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
 	n = len(p)
 	if n >= b.limit {
 		// 如果单次写入就超过了限制，直接取最后 limit 字节
@@ -43,16 +48,24 @@ func (b *TailBuffer) Write(p []byte) (n int, err error) {
 
 // Bytes 返回缓冲区内的所有数据
 func (b *TailBuffer) Bytes() []byte {
-	return b.data
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	res := make([]byte, len(b.data))
+	copy(res, b.data)
+	return res
 }
 
 // String 返回缓冲区内的字符串表示
 func (b *TailBuffer) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
 	return string(b.data)
 }
 
 // Len 返回当前存储的数据长度
 func (b *TailBuffer) Len() int {
+	b.mu.Lock()
+	defer b.mu.Unlock()
 	return len(b.data)
 }
 

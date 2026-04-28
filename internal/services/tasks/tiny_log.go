@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sync"
-	"unicode/utf8"
 
 	"github.com/engigu/baihu-panel/internal/constant"
+	"github.com/engigu/baihu-panel/internal/logger"
 	"github.com/engigu/baihu-panel/internal/utils"
 )
 
@@ -57,7 +58,7 @@ type TinyLog struct {
 	path        string
 	writer      *bufio.Writer
 	subscribers []chan []byte
-	remainder   []byte // Leftover bytes from previous write (partial multi-byte characters)
+	remainder   []byte // Leftover bytes from previous write (partial lines)
 	masks       []string // Secrets to mask
 	closed      bool
 }
@@ -90,7 +91,6 @@ func (l *TinyLog) Write(p []byte) (n int, err error) {
 		return 0, os.ErrClosed
 	}
 
-	// 1. 合并上次调用剩余的字节（可能是半个 UTF-8 字符）
 	originalInputLen := len(p)
 	payload := p
 	if len(l.remainder) > 0 {
@@ -98,42 +98,43 @@ func (l *TinyLog) Write(p []byte) (n int, err error) {
 		l.remainder = nil
 	}
 
-	// 2. 识别结尾不完整的 UTF-8 序列
-	lastSafe := len(payload)
-	// UTF-8 字符最多 4 字节，检查最后几个字节
-	for i := len(payload) - 1; i >= 0 && i >= len(payload)-4; i-- {
-		if utf8.RuneStart(payload[i]) {
-			if !utf8.FullRune(payload[i:]) {
-				// 发现末尾存在不完整字符
-				lastSafe = i
-				l.remainder = make([]byte, len(payload)-i)
-				copy(l.remainder, payload[i:])
-			}
-			break
+	// 1. 寻找最后一个换行符
+	lastNewline := bytes.LastIndexByte(payload, '\n')
+	if lastNewline == -1 {
+		// 没有换行符，且如果长度超过 4KB，强制截断并输出，防止内存无限制增长
+		if len(payload) > 4096 {
+			lastNewline = len(payload) - 1
+		} else {
+			// 保留当前所有内容到下一轮
+			l.remainder = payload
+			return originalInputLen, nil
 		}
 	}
 
-	// 如果整个负载都不完整且不超过一个 UTF-8 字符的最大长度，
-	// 则全部保留到下次调用
-	if lastSafe == 0 && len(l.remainder) > 0 {
-		return originalInputLen, nil
+	// 2. 提取出完整的行
+	completeBytes := payload[:lastNewline+1]
+
+	// 3. 剥离并保存剩余的部分
+	if lastNewline+1 < len(payload) {
+		l.remainder = make([]byte, len(payload)-(lastNewline+1))
+		copy(l.remainder, payload[lastNewline+1:])
 	}
 
-	// 3. 仅将完整的部分转换为 UTF-8，并调用封装的函数进行脱敏处理
-	text := utils.MaskSecrets(utils.ToUTF8(payload[:lastSafe]), l.masks)
-	data := []byte(text)
+	// 4. 将完整行转换为 UTF-8 并脱敏
+	text := utils.MaskSecrets(utils.ToUTF8(completeBytes), l.masks)
+	outData := []byte(text)
 
-	// 4. 写入文件缓冲区
-	_, err = l.writer.Write(data)
+	// 5. 输出安全部分
+	_, err = l.writer.Write(outData)
 	if err != nil {
 		return 0, err
 	}
 
-	// 5. 广播给所有订阅者
+	// 6. 广播给所有订阅者
 	if len(l.subscribers) > 0 {
 		for _, ch := range l.subscribers {
 			select {
-			case ch <- data:
+			case ch <- outData:
 			default:
 				// 如果订阅者处理太慢，丢弃消息以避免阻塞写入
 			}
@@ -323,4 +324,24 @@ func (l *TinyLog) ReadLastLines(n int) ([]byte, error) {
 // GetPath 返回临时文件路径
 func (l *TinyLog) GetPath() string {
 	return l.path
+}
+
+// CleanupOrphanedTinyLogs 启动时清理残留的临时日志文件
+func CleanupOrphanedTinyLogs() {
+	tmpDir := os.TempDir()
+	files, err := os.ReadDir(tmpDir)
+	if err != nil {
+		return
+	}
+
+	count := 0
+	for _, file := range files {
+		if !file.IsDir() && len(file.Name()) > 9 && file.Name()[:9] == "task_log_" && filepath.Ext(file.Name()) == ".log" {
+			os.Remove(filepath.Join(tmpDir, file.Name()))
+			count++
+		}
+	}
+	if count > 0 {
+		logger.Infof("[System] 清理了 %d 个残留的任务日志临时文件", count)
+	}
 }

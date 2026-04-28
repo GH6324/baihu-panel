@@ -67,6 +67,9 @@ func NewExecutorService(
 	settingsService SettingsService,
 	envService EnvService,
 ) *ExecutorService {
+	// 0. 清理旧临时日志
+	CleanupOrphanedTinyLogs()
+
 	es := &ExecutorService{
 		taskService:     taskService,
 		taskLogService:  taskLogService,
