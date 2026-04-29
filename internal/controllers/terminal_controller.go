@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"sync"
 	"time"
+	"strings"
 	"unicode/utf8"
 
 	"github.com/engigu/baihu-panel/internal/constant"
@@ -377,6 +378,24 @@ func (tc *TerminalController) buildTerminalEnv(userID string, extraEnvs ...strin
 	if tc.envService != nil {
 		envVars := tc.envService.GetFormattedEnvVarsByUserID(userID)
 		env = append(env, envVars...)
+	}
+
+	// 为 Docker 环境或二进制版本注入所有 mise 已安装 Node 的全局依赖路径到 NODE_PATH (Issue-90)
+	if !utils.IsInDocker() || (!strings.Contains(os.Args[0], "go-build") && !strings.Contains(os.Args[0], "tmp")) {
+		versions, _ := utils.ListMiseInstalledVersions("node")
+		var nodePaths []string
+		for _, v := range versions {
+			if p := utils.GetMiseNodePath(v); p != "" {
+				nodePaths = append(nodePaths, p)
+			}
+		}
+		if len(nodePaths) > 0 {
+			sep := ":"
+			if runtime.GOOS == "windows" {
+				sep = ";"
+			}
+			env = append(env, "NODE_PATH="+strings.Join(nodePaths, sep))
+		}
 	}
 
 	return env
