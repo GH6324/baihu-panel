@@ -571,7 +571,7 @@ watch(() => route.query.agent_id, (newVal: any) => {
         <div class="divide-y text-sm">
           <div v-for="(task, index) in tasks" :key="`large-${task.id}`"
             class="flex items-center gap-4 px-4 py-1.5 hover:bg-muted/30 transition-colors">
-            <div class="w-12 shrink-0 pl-1 text-muted-foreground tabular-nums">#{{ total - (currentPage - 1) * pageSize - index }}</div>
+            <div class="w-12 shrink-0 pl-1 text-muted-foreground tabular-nums">#{{ (currentPage - 1) * pageSize + index + 1 }}</div>
             <span class="w-8 shrink-0 flex justify-center" :title="getTaskTypeTitle(task.type || 'task')">
               <div class="relative">
                 <GitBranch v-if="task.type === TASK_TYPE.REPO" class="h-4 w-4 text-primary" />
@@ -666,7 +666,7 @@ watch(() => route.query.agent_id, (newVal: any) => {
         <div class="divide-y text-sm">
           <div v-for="(task, index) in tasks" :key="`medium-${task.id}`"
             class="flex items-center gap-4 px-4 py-2.5 hover:bg-muted/30 transition-colors">
-            <div class="w-12 shrink-0 pl-1 text-muted-foreground tabular-nums text-xs">#{{ total - (currentPage - 1) * pageSize - index }}</div>
+            <div class="w-12 shrink-0 pl-1 text-muted-foreground tabular-nums text-xs">#{{ (currentPage - 1) * pageSize + index + 1 }}</div>
             <div class="w-48 shrink-0 flex items-center gap-2 overflow-hidden">
               <span class="shrink-0" :title="getTaskTypeTitle(task.type || 'task')">
                 <div class="relative">
@@ -734,7 +734,7 @@ watch(() => route.query.agent_id, (newVal: any) => {
         <div v-for="(task, index) in tasks" :key="`small-${task.id}`" class="p-3 hover:bg-muted/50 transition-colors">
           <div class="flex items-start justify-between mb-3 border-b border-border/40 pb-2">
             <div class="flex items-center gap-2 flex-1 min-w-0 pr-2">
-              <span class="text-xs text-muted-foreground tabular-nums flex-shrink-0">#{{ total - (currentPage - 1) * pageSize - index }}</span>
+              <span class="text-xs text-muted-foreground tabular-nums flex-shrink-0">#{{ (currentPage - 1) * pageSize + index + 1 }}</span>
               <span class="shrink-0">
                 <div class="relative">
                   <GitBranch v-if="task.type === TASK_TYPE.REPO" class="h-3.5 w-3.5 text-primary" />

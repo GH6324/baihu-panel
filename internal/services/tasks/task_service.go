@@ -108,7 +108,7 @@ func (ts *TaskService) GetTasksWithPagination(page, pageSize int, name string, a
 	}
 
 	query.Count(&total)
-	query.Order("pin_type DESC, updated_at DESC").Offset((page - 1) * pageSize).Limit(pageSize).Find(&tasks)
+	query.Order("pin_type DESC, created_at DESC").Offset((page - 1) * pageSize).Limit(pageSize).Find(&tasks)
 
 	return tasks, total
 }
