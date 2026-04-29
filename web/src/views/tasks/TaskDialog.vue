@@ -239,6 +239,7 @@ watch(() => props.open, async (val: boolean) => {
       retry_interval: props.task?.retry_interval ?? 0,
       random_range: props.task?.random_range ?? 0,
       timeout: props.task?.timeout ?? 30,
+      pin_type: props.task?.pin_type ?? 'none',
       ...props.task
     }
     // 解析清理配置

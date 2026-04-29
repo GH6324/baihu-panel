@@ -7,11 +7,18 @@ import Pagination from '@/components/Pagination.vue'
 import TaskDialog from './TaskDialog.vue'
 import RepoDialog from './RepoDialog.vue'
 import LogViewer from '@/views/history/LogViewer.vue'
-import { Plus, Play, Pencil, Trash2, Search, ScrollText, GitBranch, Terminal, Server, Monitor, X, Loader2, RefreshCw, Wifi, WifiOff, Zap, ZapOff, Copy, Tag, ChevronDown } from 'lucide-vue-next'
+import { Plus, Play, Pencil, Trash2, Search, ScrollText, GitBranch, Terminal, Server, Monitor, X, Loader2, RefreshCw, Wifi, WifiOff, Zap, ZapOff, Copy, Tag, ChevronDown, Pin, PinOff, MoreHorizontal } from 'lucide-vue-next'
 import TagInput from '@/components/TagInput.vue'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
 import { api, type Agent, type Task, type TaskLog } from '@/api'
 import { toast } from 'vue-sonner'
 import { useSiteSettings } from '@/composables/useSiteSettings'
@@ -223,6 +230,15 @@ async function toggleTask(task: Task, enabled: boolean) {
   } catch { toast.error('操作失败') }
 }
 
+async function togglePin(task: Task) {
+  const newType = task.pin_type === 'top' ? 'none' : 'top'
+  try {
+    await api.tasks.update(task.id, { ...task, pin_type: newType })
+    toast.success(newType === 'top' ? '任务已置顶' : '已取消置顶')
+    loadTasks()
+  } catch { toast.error('置顶操作失败') }
+}
+
 const showLogViewer = ref(false)
 const selectedLog = ref<TaskLog | null>(null)
 const logContent = ref('')
@@ -414,7 +430,7 @@ watch(() => route.query.agent_id, (newVal: any) => {
 
 <template>
   <div class="space-y-6">
-    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+    <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
       <div class="flex flex-col shrink-0">
         <Popover>
           <PopoverTrigger as-child>
@@ -464,22 +480,22 @@ watch(() => route.query.agent_id, (newVal: any) => {
         <p class="text-muted-foreground text-xs mt-0.5 ml-0.5">管理和调度自动化执行任务</p>
       </div>
 
-      <div class="flex flex-row items-center flex-wrap gap-2 w-full lg:w-auto lg:ml-auto lg:justify-end">
+      <div class="flex flex-row items-center flex-wrap gap-2 w-full xl:w-auto xl:ml-auto xl:justify-end">
         <!-- 搜索与标签 -->
-        <div class="flex flex-row items-center gap-2 w-full sm:flex-1 lg:flex-none lg:w-auto text-sm">
-          <div class="relative flex-1 lg:flex-none lg:w-[240px] group">
+        <div class="flex flex-row items-center gap-2 w-full sm:flex-1 xl:flex-none xl:w-auto text-sm">
+          <div class="relative flex-1 xl:flex-none xl:w-[240px] group">
             <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
             <Input v-model="filterName" placeholder="搜索任务..." class="h-9 pl-9 w-full bg-muted/20 border-muted-foreground/10 focus:bg-background text-sm"
               @input="handleSearch" />
           </div>
           <TagInput v-model="filterTags" placeholder="搜索标签..." :icon="Tag" multiple
-            class="h-9 flex-1 lg:flex-none lg:w-[180px] bg-muted/20 border-muted-foreground/10 focus:bg-background text-sm"
+            class="h-9 flex-1 xl:flex-none xl:w-[180px] bg-muted/20 border-muted-foreground/10 focus:bg-background text-sm"
             @enter="handleSearch" @update:modelValue="handleSearch" />
         </div>
 
         <div class="flex items-center gap-2 w-full sm:w-auto sm:justify-end">
           <!-- 移动端类型切换 -->
-          <div class="lg:hidden flex-1 shrink-0">
+          <div class="xl:hidden flex-1 shrink-0">
              <Select v-model="filterType" @update:model-value="(_v: any) => handleTypeChange()">
                <SelectTrigger class="h-9 w-full text-sm bg-muted/20 border-muted-foreground/10">
                  <SelectValue />
@@ -503,18 +519,18 @@ watch(() => route.query.agent_id, (newVal: any) => {
           </Button>
 
           <div class="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
-            <Button variant="outline" class="shrink-0 px-2 lg:px-3 h-9 shadow-sm text-destructive border-destructive/20 hover:bg-destructive/10" @click="confirmBatchDelete" title="批量删除">
-              <Trash2 class="h-4 w-4 lg:mr-2" /> <span class="hidden lg:inline">批量删除</span>
+            <Button variant="outline" class="shrink-0 px-2 xl:px-3 h-9 shadow-sm text-destructive border-destructive/20 hover:bg-destructive/10" @click="confirmBatchDelete" title="批量删除">
+              <Trash2 class="h-4 w-4 xl:mr-2" /> <span class="hidden xl:inline">批量删除</span>
             </Button>
-            <Button v-if="filterType === TASK_TYPE.NORMAL" @click="openCreate" class="shrink-0 px-2 lg:px-3 h-9 shadow-sm font-medium" title="新建任务">
-              <Plus class="h-4 w-4 lg:mr-2" /> <span class="hidden lg:inline">新建任务</span>
+            <Button v-if="filterType === TASK_TYPE.NORMAL" @click="openCreate" class="shrink-0 px-2 xl:px-3 h-9 shadow-sm font-medium" title="新建任务">
+              <Plus class="h-4 w-4 xl:mr-2" /> <span class="hidden xl:inline">新建任务</span>
             </Button>
-            <Button v-else-if="filterType === TASK_TYPE.REPO" @click="openCreateRepo" class="shrink-0 px-2 lg:px-3 h-9 shadow-sm font-medium" title="同步仓库">
-              <GitBranch class="h-4 w-4 lg:mr-2" /> <span class="hidden lg:inline">同步仓库</span>
+            <Button v-else-if="filterType === TASK_TYPE.REPO" @click="openCreateRepo" class="shrink-0 px-2 xl:px-3 h-9 shadow-sm font-medium" title="同步仓库">
+              <GitBranch class="h-4 w-4 xl:mr-2" /> <span class="hidden xl:inline">同步仓库</span>
             </Button>
 
             <!-- 桌面端类型切换 -->
-            <Tabs :model-value="filterType" @update:model-value="(v: string | number) => { filterType = String(v); handleTypeChange() }" class="shrink-0 hidden lg:block">
+            <Tabs :model-value="filterType" @update:model-value="(v: string | number) => { filterType = String(v); handleTypeChange() }" class="shrink-0 hidden xl:block">
             <TabsList class="h-9 p-1 bg-muted/30 border">
                   <TabsTrigger :value="TASK_TYPE.NORMAL" class="px-4 h-7 text-sm">定时任务</TabsTrigger>
                   <TabsTrigger :value="TASK_TYPE.REPO" class="px-4 h-7 text-sm">仓库同步</TabsTrigger>
@@ -524,7 +540,7 @@ watch(() => route.query.agent_id, (newVal: any) => {
         </div>
         <!-- 移动端/平板 agent 过滤标签 -->
         <div v-if="filterAgentId"
-          class="flex lg:hidden items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-sm w-fit mt-1">
+          class="flex xl:hidden items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-sm w-fit mt-1">
           <Server class="h-3.5 w-3.5" />
           <span>{{ filterAgentName }}</span>
           <X class="h-3.5 w-3.5 cursor-pointer hover:text-destructive" @click="clearAgentFilter" />
@@ -533,8 +549,8 @@ watch(() => route.query.agent_id, (newVal: any) => {
     </div>
 
     <div class="rounded-lg border bg-card overflow-hidden">
-      <!-- ========== 1. 大屏布局 (Large >= 1024px) - 用户调好 ========== -->
-      <div class="hidden lg:block">
+      <!-- ========== 1. 大屏布局 (Large >= 1280px) ========== -->
+      <div class="hidden xl:block">
         <!-- 表头 -->
         <div class="flex items-center gap-4 px-4 py-1.5 border-b bg-muted/20 text-xs text-muted-foreground font-medium">
           <span class="w-12 shrink-0 pl-1">序号</span>
@@ -542,12 +558,14 @@ watch(() => route.query.agent_id, (newVal: any) => {
           <span class="w-56 shrink-0">名称</span>
           <span class="w-32 shrink-0">执行位置</span>
           <span class="flex-1 min-w-0 flex items-center gap-1.5 line-clamp-1">
-            <Terminal class="h-3.5 w-3.5 opacity-50" />命令/地址
+            <GitBranch v-if="filterType === TASK_TYPE.REPO" class="h-3.5 w-3.5 opacity-50" />
+            <Terminal v-else class="h-3.5 w-3.5 opacity-50" />
+            {{ filterType === TASK_TYPE.REPO ? '仓库地址' : '命令内容' }}
           </span>
-          <span class="w-28 shrink-0">定时规则</span>
+          <span class="w-28 shrink-0">{{ filterType === TASK_TYPE.REPO ? '同步周期' : '定时规则' }}</span>
           <span class="w-40 shrink-0">执行时间</span>
           <span class="w-8 shrink-0 text-center">状态</span>
-          <span class="w-36 shrink-0 text-center">操作</span>
+          <span class="w-24 shrink-0 text-center">操作</span>
         </div>
         <!-- 列表 -->
         <div class="divide-y text-sm">
@@ -555,11 +573,17 @@ watch(() => route.query.agent_id, (newVal: any) => {
             class="flex items-center gap-4 px-4 py-1.5 hover:bg-muted/30 transition-colors">
             <div class="w-12 shrink-0 pl-1 text-muted-foreground tabular-nums">#{{ total - (currentPage - 1) * pageSize - index }}</div>
             <span class="w-8 shrink-0 flex justify-center" :title="getTaskTypeTitle(task.type || 'task')">
-              <GitBranch v-if="task.type === TASK_TYPE.REPO" class="h-4 w-4 text-primary" />
-              <Terminal v-else class="h-4 w-4 text-primary" />
+              <div class="relative">
+                <GitBranch v-if="task.type === TASK_TYPE.REPO" class="h-4 w-4 text-primary" />
+                <Terminal v-else class="h-4 w-4 text-primary" />
+                <div v-if="task.pin_type === 'top'" class="absolute -top-1 -right-1 h-2 w-2 bg-primary rounded-full border-2 border-background" />
+              </div>
             </span>
             <div class="w-56 shrink-0 flex flex-col justify-center gap-0.5 overflow-hidden">
-              <span class="font-medium truncate cursor-help" :title="task.name">{{ task.name }}</span>
+              <div class="flex items-center gap-1.5 overflow-hidden">
+                <span class="font-medium truncate cursor-help" :title="task.name">{{ task.name }}</span>
+                <Pin v-if="task.pin_type === 'top'" class="h-3 w-3 text-primary fill-primary shrink-0 rotate-45" />
+              </div>
               <div v-if="task.tags" class="flex items-center gap-1 overflow-hidden">
                 <span v-for="tag in task.tags.split(',').filter(Boolean).slice(0, 3)" :key="tag"
                   class="truncate text-[10px] leading-none px-1 py-0.5 bg-secondary text-secondary-foreground rounded border">{{ tag }}</span>
@@ -574,7 +598,7 @@ watch(() => route.query.agent_id, (newVal: any) => {
               <span class="truncate">{{ getExecutorName(task) }}</span>
             </span>
             <code class="flex-1 min-w-0 text-muted-foreground truncate text-xs bg-muted/40 px-2 py-1 rounded">
-              <TextOverflow :text="task.command" :title="task.type === TASK_TYPE.REPO ? '同步地址' : '执行命令'" class="truncate" />
+              <TextOverflow :text="task.command" :title="task.type === TASK_TYPE.REPO ? '仓库地址' : '执行命令'" class="truncate" />
             </code>
             <div class="w-28 shrink-0 flex flex-col items-start justify-center gap-1 overflow-hidden">
               <span v-if="task.trigger_type === TRIGGER_TYPE.BAIHU_STARTUP" class="text-[10px] leading-tight bg-blue-500/10 text-blue-500 px-2 py-1 rounded-md">服务启动时</span>
@@ -592,40 +616,70 @@ watch(() => route.query.agent_id, (newVal: any) => {
                 <ZapOff class="h-3.5 w-3.5 text-muted-foreground" />
               </div>
             </span>
-            <span class="w-36 shrink-0 flex justify-center gap-1">
-              <Button variant="ghost" size="icon" class="h-7 w-7" @click="runTask(task.id)" :disabled="executingTaskId === task.id">
-                <Loader2 v-if="executingTaskId === task.id" class="h-3.5 w-3.5 animate-spin" />
-                <Play v-else class="h-3.5 w-3.5" />
+            <span class="w-24 shrink-0 flex justify-center">
+              <Button variant="ghost" size="icon" class="h-6 w-6" @click="runTask(task.id)" :disabled="executingTaskId === task.id">
+                <Loader2 v-if="executingTaskId === task.id" class="h-3 w-3 animate-spin" />
+                <Play v-else class="h-3 w-3" />
               </Button>
-              <Button variant="ghost" size="icon" class="h-7 w-7" @click="viewLogs(task.id)"><ScrollText class="h-3.5 w-3.5" /></Button>
-              <Button variant="ghost" size="icon" class="h-7 w-7" @click="openEdit(task)"><Pencil class="h-3.5 w-3.5" /></Button>
-              <Button variant="ghost" size="icon" class="h-7 w-7" @click="duplicateTask(task)"><Copy class="h-3.5 w-3.5" /></Button>
-              <Button variant="ghost" size="icon" class="h-7 w-7 text-destructive" @click="confirmDelete(task.id)"><Trash2 class="h-3.5 w-3.5" /></Button>
+              <Button variant="ghost" size="icon" class="h-6 w-6" @click="viewLogs(task.id)"><ScrollText class="h-3 w-3" /></Button>
+              <Button variant="ghost" size="icon" class="h-6 w-6" @click="openEdit(task)"><Pencil class="h-3 w-3" /></Button>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                  <Button variant="ghost" size="icon" class="h-6 w-6"><MoreHorizontal class="h-3 w-3" /></Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" class="w-32">
+                  <DropdownMenuItem @click="togglePin(task)">
+                    <Pin v-if="task.pin_type !== 'top'" class="h-3.5 w-3.5 mr-2" />
+                    <PinOff v-else class="h-3.5 w-3.5 mr-2 text-primary" />
+                    <span>{{ task.pin_type === 'top' ? '取消置顶' : '置顶任务' }}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem @click="duplicateTask(task)">
+                    <Copy class="h-3.5 w-3.5 mr-2" />
+                    <span>复制任务</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem class="text-destructive focus:text-destructive" @click="confirmDelete(task.id)">
+                    <Trash2 class="h-3.5 w-3.5 mr-2" />
+                    <span>删除任务</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </span>
           </div>
         </div>
       </div>
 
-      <!-- ========== 2. 中屏布局 (Medium 640px - 1024px) - 新抽取优化 ========== -->
-      <div class="hidden sm:block lg:hidden">
+      <!-- ========== 2. 中屏布局 (Medium 640px - 1280px) ========== -->
+      <div class="hidden sm:block xl:hidden">
         <!-- 表头 -->
         <div class="flex items-center gap-4 px-4 py-1.5 border-b bg-muted/20 text-xs text-muted-foreground font-medium">
+          <span class="w-12 shrink-0 pl-1">序号</span>
           <span class="w-48 shrink-0">任务信息</span>
-          <span class="flex-1 min-w-0">命令内容</span>
+          <span class="flex-1 min-w-0">
+            {{ filterType === TASK_TYPE.REPO ? '仓库地址' : '命令内容' }}
+          </span>
           <span class="w-8 shrink-0 text-center">状态</span>
           <span class="w-24 shrink-0 text-center">操作</span>
         </div>
         <!-- 列表 -->
         <div class="divide-y text-sm">
-          <div v-for="task in tasks" :key="`medium-${task.id}`"
+          <div v-for="(task, index) in tasks" :key="`medium-${task.id}`"
             class="flex items-center gap-4 px-4 py-2.5 hover:bg-muted/30 transition-colors">
+            <div class="w-12 shrink-0 pl-1 text-muted-foreground tabular-nums text-xs">#{{ total - (currentPage - 1) * pageSize - index }}</div>
             <div class="w-48 shrink-0 flex items-center gap-2 overflow-hidden">
               <span class="shrink-0" :title="getTaskTypeTitle(task.type || 'task')">
-                <GitBranch v-if="task.type === TASK_TYPE.REPO" class="h-3.5 w-3.5 text-primary" />
-                <Terminal v-else class="h-3.5 w-3.5 text-primary" />
+                <div class="relative">
+                  <GitBranch v-if="task.type === TASK_TYPE.REPO" class="h-3.5 w-3.5 text-primary" />
+                  <Terminal v-else class="h-3.5 w-3.5 text-primary" />
+                  <div v-if="task.pin_type === 'top'" class="absolute -top-1 -right-1 h-1.5 w-1.5 bg-primary rounded-full border border-background" />
+                </div>
               </span>
               <div class="flex flex-col min-w-0">
-                <span class="font-medium truncate">{{ task.name }}</span>
+                <div class="flex items-center gap-1.5 overflow-hidden">
+                  <span class="font-medium truncate">{{ task.name }}</span>
+                  <Pin v-if="task.pin_type === 'top'" class="h-3 w-3 text-primary fill-primary shrink-0 rotate-45" />
+                </div>
                 <span v-if="task.schedule" class="text-[10px] text-muted-foreground font-mono truncate">{{ task.schedule }}</span>
               </div>
             </div>
@@ -640,19 +694,41 @@ watch(() => route.query.agent_id, (newVal: any) => {
                 <ZapOff class="h-3.5 w-3.5 text-muted-foreground" />
               </div>
             </span>
-            <div class="w-24 shrink-0 flex justify-center gap-0.5">
-              <Button variant="ghost" size="icon" class="h-8 w-8" @click="runTask(task.id)" :disabled="executingTaskId === task.id">
-                <Loader2 v-if="executingTaskId === task.id" class="h-3.5 w-3.5 animate-spin" />
-                <Play v-else class="h-3.5 w-3.5" />
+            <div class="w-24 shrink-0 flex justify-center">
+              <Button variant="ghost" size="icon" class="h-6 w-6" @click="runTask(task.id)" :disabled="executingTaskId === task.id">
+                <Loader2 v-if="executingTaskId === task.id" class="h-3 w-3 animate-spin" />
+                <Play v-else class="h-3 w-3" />
               </Button>
-              <Button variant="ghost" size="icon" class="h-8 w-8" @click="viewLogs(task.id)"><ScrollText class="h-3.5 w-3.5" /></Button>
-              <Button variant="ghost" size="icon" class="h-8 w-8" @click="openEdit(task)"><Pencil class="h-3.5 w-3.5" /></Button>
+              <Button variant="ghost" size="icon" class="h-6 w-6" @click="viewLogs(task.id)"><ScrollText class="h-3 w-3" /></Button>
+              <Button variant="ghost" size="icon" class="h-6 w-6" @click="openEdit(task)"><Pencil class="h-3 w-3" /></Button>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                  <Button variant="ghost" size="icon" class="h-6 w-6"><MoreHorizontal class="h-3 w-3" /></Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" class="w-32">
+                  <DropdownMenuItem @click="togglePin(task)">
+                    <Pin v-if="task.pin_type !== 'top'" class="h-3.5 w-3.5 mr-2" />
+                    <PinOff v-else class="h-3.5 w-3.5 mr-2 text-primary" />
+                    <span>{{ task.pin_type === 'top' ? '取消置顶' : '置顶任务' }}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem @click="duplicateTask(task)">
+                    <Copy class="h-3.5 w-3.5 mr-2" />
+                    <span>复制任务</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem class="text-destructive focus:text-destructive" @click="confirmDelete(task.id)">
+                    <Trash2 class="h-3.5 w-3.5 mr-2" />
+                    <span>删除任务</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ========== 3. 小屏布局 (Small < 640px) - 用户调好 ========== -->
+      <!-- ========== 3. 小屏布局 (Small < 640px) ========== -->
       <div class="divide-y sm:hidden">
         <div v-if="tasks.length === 0" class="text-sm text-muted-foreground text-center py-8">暂无任务</div>
         <div v-for="(task, index) in tasks" :key="`small-${task.id}`" class="p-3 hover:bg-muted/50 transition-colors">
@@ -660,10 +736,16 @@ watch(() => route.query.agent_id, (newVal: any) => {
             <div class="flex items-center gap-2 flex-1 min-w-0 pr-2">
               <span class="text-xs text-muted-foreground tabular-nums flex-shrink-0">#{{ total - (currentPage - 1) * pageSize - index }}</span>
               <span class="shrink-0">
-                <GitBranch v-if="task.type === TASK_TYPE.REPO" class="h-3.5 w-3.5 text-primary" />
-                <Terminal v-else class="h-3.5 w-3.5 text-primary" />
+                <div class="relative">
+                  <GitBranch v-if="task.type === TASK_TYPE.REPO" class="h-3.5 w-3.5 text-primary" />
+                  <Terminal v-else class="h-3.5 w-3.5 text-primary" />
+                  <div v-if="task.pin_type === 'top'" class="absolute -top-1 -right-1 h-1.5 w-1.5 bg-primary rounded-full border border-background" />
+                </div>
               </span>
-              <span class="font-bold text-sm truncate">{{ task.name }}</span>
+              <div class="flex items-center gap-1.5 min-w-0 flex-1">
+                <span class="font-bold text-sm truncate">{{ task.name }}</span>
+                <Pin v-if="task.pin_type === 'top'" class="h-3 w-3 text-primary fill-primary shrink-0 rotate-45" />
+              </div>
             </div>
             <span @click="toggleTask(task, !task.enabled)" class="cursor-pointer">
               <div v-if="task.enabled" class="h-6 w-6 rounded-md bg-green-500/10 flex items-center justify-center"><Zap class="h-3.5 w-3.5 text-green-500 fill-green-500" /></div>
@@ -672,7 +754,7 @@ watch(() => route.query.agent_id, (newVal: any) => {
           </div>
           <div class="space-y-1.5 text-xs text-muted-foreground mb-3 px-1">
             <div class="flex items-center gap-3">
-              <span class="w-10 shrink-0 font-medium opacity-70">定时:</span>
+              <span class="w-10 shrink-0 font-medium opacity-70">{{ task.type === TASK_TYPE.REPO ? '周期:' : '定时:' }}</span>
               <span v-if="task.trigger_type === TRIGGER_TYPE.BAIHU_STARTUP" class="text-[10px] leading-tight bg-blue-500/10 text-blue-500 px-1.5 py-0.5 rounded font-medium">服务启动时</span>
               <div v-else-if="task.schedule" class="flex items-center gap-1.5 flex-1 min-w-0">
                 <span class="text-xs text-foreground bg-muted/40 px-1.5 py-0.5 rounded shrink-0">{{ task.schedule }}</span>
@@ -683,7 +765,7 @@ watch(() => route.query.agent_id, (newVal: any) => {
               </div>
             </div>
             <div class="flex items-start gap-3">
-              <span class="w-10 shrink-0 font-medium mt-0.5 opacity-70">命令:</span>
+              <span class="w-10 shrink-0 font-medium mt-0.5 opacity-70">{{ task.type === TASK_TYPE.REPO ? '地址:' : '命令:' }}</span>
               <div class="flex-1 min-w-0 overflow-hidden text-foreground"><TextOverflow :text="task.command" class="truncate opacity-80" /></div>
             </div>
             <div v-if="task.remark" class="flex items-start gap-3">
@@ -694,7 +776,7 @@ watch(() => route.query.agent_id, (newVal: any) => {
           <div class="grid grid-cols-4 items-center pt-2 mt-2 border-t border-border/40 -mx-1">
             <Button variant="ghost" class="h-9 px-0 text-xs gap-1.5 hover:bg-primary/5 rounded-none" @click="runTask(task.id)" :disabled="executingTaskId === task.id">
               <Loader2 v-if="executingTaskId === task.id" class="h-3.5 w-3.5 animate-spin" />
-              <Play v-else class="h-3.5 w-3.5" />执行
+              <Play v-else class="h-3.5 w-3.5" />{{ task.type === TASK_TYPE.REPO ? '同步' : '执行' }}
             </Button>
             <Button variant="ghost" class="h-9 px-0 text-xs gap-1.5 hover:bg-primary/5 rounded-none border-l border-border/10" @click="viewLogs(task.id)">
               <ScrollText class="h-3.5 w-3.5" />日志
@@ -702,9 +784,30 @@ watch(() => route.query.agent_id, (newVal: any) => {
             <Button variant="ghost" class="h-9 px-0 text-xs gap-1.5 hover:bg-primary/5 rounded-none border-l border-border/10" @click="openEdit(task)">
               <Pencil class="h-3.5 w-3.5" />编辑
             </Button>
-            <Button variant="ghost" class="h-9 px-0 text-xs gap-1.5 hover:bg-destructive/5 text-destructive rounded-none border-l border-border/10" @click="confirmDelete(task.id)">
-              <Trash2 class="h-3.5 w-3.5" />删除
-            </Button>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger as-child>
+                <Button variant="ghost" class="h-9 px-0 text-xs gap-1.5 hover:bg-primary/5 rounded-none border-l border-border/10 w-full">
+                  <MoreHorizontal class="h-3.5 w-3.5" />更多
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" class="w-40">
+                <DropdownMenuItem @click="togglePin(task)">
+                  <Pin v-if="task.pin_type !== 'top'" class="h-4 w-4 mr-2" />
+                  <PinOff v-else class="h-4 w-4 mr-2 text-primary" />
+                  <span>{{ task.pin_type === 'top' ? '取消置顶' : '置顶任务' }}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="duplicateTask(task)">
+                  <Copy class="h-4 w-4 mr-2" />
+                  <span>复制任务</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem class="text-destructive focus:text-destructive" @click="confirmDelete(task.id)">
+                  <Trash2 class="h-4 w-4 mr-2" />
+                  <span>删除任务</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

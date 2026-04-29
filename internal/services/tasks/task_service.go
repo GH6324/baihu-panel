@@ -24,17 +24,21 @@ func (ts *TaskService) GetTaskBySourceID(sourceID string) *models.Task {
 	return &task
 }
 
-func (ts *TaskService) CreateTask(name, command, schedule string, timeout int, workDir, cleanConfig, envs, taskType, config string, agentID *string, languages models.TaskLanguages, triggerType string, tags string, retryCount int, retryInterval int, randomRange int, sourceID string) *models.Task {
+func (ts *TaskService) CreateTask(name, command, schedule string, timeout int, workDir, cleanConfig, envs, taskType, config string, agentID *string, languages models.TaskLanguages, triggerType string, tags string, retryCount int, retryInterval int, randomRange int, sourceID string, pinType string) *models.Task {
 	if taskType == "" {
 		taskType = "task"
 	}
 	if triggerType == "" {
 		triggerType = constant.TriggerTypeCron
 	}
+	if pinType == "" {
+		pinType = constant.PinTypeNone
+	}
 	task := &models.Task{
 		ID:            utils.GenerateID(),
 		Name:          name,
 		Command:       models.BigText(command),
+		PinType:       pinType,
 		Tags:          tags,
 		Type:          taskType,
 		TriggerType:   triggerType,
@@ -104,7 +108,7 @@ func (ts *TaskService) GetTasksWithPagination(page, pageSize int, name string, a
 	}
 
 	query.Count(&total)
-	query.Order("id DESC").Offset((page - 1) * pageSize).Limit(pageSize).Find(&tasks)
+	query.Order("pin_type DESC, updated_at DESC").Offset((page - 1) * pageSize).Limit(pageSize).Find(&tasks)
 
 	return tasks, total
 }
@@ -118,7 +122,7 @@ func (ts *TaskService) GetTaskByID(id string) *models.Task {
 	return &task
 }
 
-func (ts *TaskService) UpdateTask(id string, name, command, schedule string, timeout int, workDir, cleanConfig, envs string, enabled bool, taskType, config string, agentID *string, languages models.TaskLanguages, triggerType string, tags string, retryCount int, retryInterval int, randomRange int, sourceID string) *models.Task {
+func (ts *TaskService) UpdateTask(id string, name, command, schedule string, timeout int, workDir, cleanConfig, envs string, enabled bool, taskType, config string, agentID *string, languages models.TaskLanguages, triggerType string, tags string, retryCount int, retryInterval int, randomRange int, sourceID string, pinType string) *models.Task {
 	var task models.Task
 	res := database.DB.Where("id = ?", id).Limit(1).Find(&task)
 	if res.Error != nil || res.RowsAffected == 0 {
@@ -126,6 +130,7 @@ func (ts *TaskService) UpdateTask(id string, name, command, schedule string, tim
 	}
 	task.Name = name
 	task.Command = models.BigText(command)
+	task.PinType = pinType
 	task.Tags = tags
 	task.Schedule = schedule
 	task.Timeout = timeout
@@ -153,7 +158,7 @@ func (ts *TaskService) UpdateTask(id string, name, command, schedule string, tim
 		"Name", "Command", "Tags", "Schedule", "Timeout", "WorkDir",
 		"CleanConfig", "Envs", "Enabled", "AgentID", "Languages",
 		"RetryCount", "RetryInterval", "RandomRange", "Type",
-		"TriggerType", "Config", "SourceID",
+		"TriggerType", "Config", "SourceID", "PinType",
 	).Updates(&task)
 
 	return &task

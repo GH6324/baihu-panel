@@ -73,6 +73,7 @@ func (tc *TaskController) CreateTask(c *gin.Context) {
 		RetryCount    int                 `json:"retry_count"`
 		RetryInterval int                 `json:"retry_interval"`
 		RandomRange   int                 `json:"random_range"`
+		PinType       string              `json:"pin_type"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -116,12 +117,12 @@ func (tc *TaskController) CreateTask(c *gin.Context) {
 	if sourceID != "" {
 		task = tc.taskService.GetTaskBySourceID(sourceID)
 		if task != nil {
-			task = tc.taskService.UpdateTask(task.ID, req.Name, req.Command, req.Schedule, req.Timeout, workDir, req.CleanConfig, req.Envs, true, req.Type, req.Config, req.AgentID, req.Languages, req.TriggerType, req.Tags, req.RetryCount, req.RetryInterval, req.RandomRange, sourceID)
+			task = tc.taskService.UpdateTask(task.ID, req.Name, req.Command, req.Schedule, req.Timeout, workDir, req.CleanConfig, req.Envs, true, req.Type, req.Config, req.AgentID, req.Languages, req.TriggerType, req.Tags, req.RetryCount, req.RetryInterval, req.RandomRange, sourceID, req.PinType)
 		}
 	}
 
 	if task == nil {
-		task = tc.taskService.CreateTask(req.Name, req.Command, req.Schedule, req.Timeout, workDir, req.CleanConfig, req.Envs, req.Type, req.Config, req.AgentID, req.Languages, req.TriggerType, req.Tags, req.RetryCount, req.RetryInterval, req.RandomRange, sourceID)
+		task = tc.taskService.CreateTask(req.Name, req.Command, req.Schedule, req.Timeout, workDir, req.CleanConfig, req.Envs, req.Type, req.Config, req.AgentID, req.Languages, req.TriggerType, req.Tags, req.RetryCount, req.RetryInterval, req.RandomRange, sourceID, req.PinType)
 	}
 
 	// 如果是 Agent 任务，通知 Agent；否则添加到本地 cron
@@ -237,6 +238,7 @@ func (tc *TaskController) UpdateTask(c *gin.Context) {
 		RetryCount    int                 `json:"retry_count"`
 		RetryInterval int                 `json:"retry_interval"`
 		RandomRange   int                 `json:"random_range"`
+		PinType       string              `json:"pin_type"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -270,7 +272,7 @@ func (tc *TaskController) UpdateTask(c *gin.Context) {
 		sourceID = oldTask.SourceID
 	}
 
-	task := tc.taskService.UpdateTask(id, req.Name, req.Command, req.Schedule, req.Timeout, workDir, req.CleanConfig, req.Envs, req.Enabled, req.Type, req.Config, req.AgentID, req.Languages, req.TriggerType, req.Tags, req.RetryCount, req.RetryInterval, req.RandomRange, sourceID)
+	task := tc.taskService.UpdateTask(id, req.Name, req.Command, req.Schedule, req.Timeout, workDir, req.CleanConfig, req.Envs, req.Enabled, req.Type, req.Config, req.AgentID, req.Languages, req.TriggerType, req.Tags, req.RetryCount, req.RetryInterval, req.RandomRange, sourceID, req.PinType)
 	if task == nil {
 		utils.NotFound(c, "任务不存在")
 		return

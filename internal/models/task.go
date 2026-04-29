@@ -71,6 +71,7 @@ type Task struct {
 	ID            string              `json:"id" gorm:"primaryKey;size:20"`
 	Name          string              `json:"name" gorm:"size:255;not null"`
 	Remark        string              `json:"remark" gorm:"size:255;default:''"`
+	PinType       string              `json:"pin_type" gorm:"size:20;default:none;index"` // 置顶类型: constant.PinTypeNone, constant.PinTypeTop
 	Command       BigText             `json:"command"`                   // 普通任务的命令
 	Tags          string              `json:"tags" gorm:"size:255;default:''"`            // 标签，逗号分隔
 	Type          string              `json:"type" gorm:"size:20;default:'task'"`         // 任务类型: constant.TaskTypeNormal, constant.TaskTypeRepo

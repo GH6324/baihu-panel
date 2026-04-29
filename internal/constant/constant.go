@@ -133,6 +133,10 @@ const (
 	TaskTypeNormal = "task"
 	TaskTypeRepo   = "repo"
 
+	// 任务置顶类型
+	PinTypeNone = "none"
+	PinTypeTop  = "top"
+
 	// 触发类型
 	TriggerTypeCron         = "cron"
 	TriggerTypeBaihuStartup = "baihu_startup"

@@ -356,6 +356,7 @@ export interface Task {
   retry_count: number
   retry_interval: number
   random_range: number
+  pin_type: 'none' | 'top'
   languages: { name: string; version: string }[]
   agent_id: string | null
   enabled: boolean

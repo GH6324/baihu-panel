@@ -49,9 +49,10 @@ func CheckWSOrigin(r *http.Request) bool {
 		}
 	}
 
-	// 3. 兜底策略：如果是开发环境常见的 localhost/127.0.0.1，且端口不一致的情况，
-	// 如果用户没有配置允许列表，我们在非 Release 模式下可以考虑放行，
-	// 但为了安全，默认应严格限制。建议开发时通过 BH_ALLOWED_ORIGINS=localhost:5173 显式开启。
+	// 3. 允许来自 localhost 和 127.0.0.1 的请求 (方便本地开发和同机部署)
+	if strings.HasPrefix(u.Host, "localhost") || strings.HasPrefix(u.Host, "127.0.0.1") {
+		return true
+	}
 
 	return false
 }
