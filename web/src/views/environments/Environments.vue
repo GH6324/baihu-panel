@@ -387,6 +387,7 @@ onBeforeUnmount(() => {
             
             <div class="w-48 shrink-0 flex items-center gap-1.5 overflow-hidden">
               <code class="font-bold truncate text-[11px] bg-muted/60 px-2 py-0.5 rounded text-zinc-700 dark:text-zinc-200">{{ env.name }}</code>
+              <Badge v-if="isNotifyEnv(env.name)" variant="secondary" class="text-[9px] h-3.5 px-1 rounded-sm uppercase font-bold tracking-tighter shrink-0 leading-none">内置</Badge>
             </div>
 
             <div class="flex-1 min-w-0 text-muted-foreground truncate text-xs">
