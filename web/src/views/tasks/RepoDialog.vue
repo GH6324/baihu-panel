@@ -537,19 +537,19 @@ async function save() {
   <Dialog :open="open" @update:open="emit('update:open', $event)">
     <DialogContent class="max-w-[95vw] sm:max-w-[700px] xl:max-w-[950px] p-0 overflow-hidden border-none bg-background shadow-2xl transition-all duration-300" style="text-rendering: optimizeLegibility;" @openAutoFocus.prevent>
       <div class="flex flex-col max-h-[85vh]">
-        <DialogHeader class="px-6 pr-12 pt-6 pb-2 shrink-0">
-          <div class="flex items-center justify-between">
-            <DialogTitle class="text-xl font-bold">
+        <DialogHeader class="px-5 sm:px-6 pr-10 pt-6 pb-2 shrink-0">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-2">
+            <DialogTitle class="text-xl font-bold whitespace-nowrap">
               {{ isEdit ? '编辑仓库同步' : '新建仓库同步' }}
             </DialogTitle>
-            <div class="flex items-center gap-2">
-              <Button v-if="!isEdit" variant="outline" size="sm" @click="importFromBaihu" class="h-8 gap-1.5 bg-primary/5 hover:bg-primary/10 border-primary/20 hover:border-primary/40 text-primary">
+            <div v-if="!isEdit" class="flex flex-wrap items-center gap-2">
+              <Button variant="outline" size="sm" @click="importFromBaihu" class="flex-1 sm:flex-initial h-8 gap-1.5 bg-primary/5 hover:bg-primary/10 border-primary/20 hover:border-primary/40 text-primary px-3">
                 <Terminal class="w-3.5 h-3.5" />
-                Baihu 命令导入
+                <span class="text-xs">Baihu 命令导入</span>
               </Button>
-              <Button v-if="!isEdit" variant="outline" size="sm" @click="importFromQl" class="h-8 gap-1.5 bg-muted/50 hover:bg-muted border-muted-foreground/20 text-muted-foreground">
+              <Button variant="outline" size="sm" @click="importFromQl" class="flex-1 sm:flex-initial h-8 gap-1.5 bg-muted/50 hover:bg-muted border-muted-foreground/20 text-muted-foreground px-3">
                 <Download class="w-3.5 h-3.5" />
-                Qinlong格式导入
+                <span class="text-xs">Qinlong格式导入</span>
               </Button>
             </div>
           </div>
