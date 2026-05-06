@@ -39,6 +39,25 @@ func BuildRuntimeProcessEnv() []string {
 	return envs
 }
 
+// GetSystemSecrets 返回当前运行时的所有系统级敏感机密（如数据库账号密码等）
+func GetSystemSecrets() []string {
+	secrets := make([]string, 0, 8)
+	addIfNotEmpty := func(s string) {
+		if s != "" {
+			secrets = append(secrets, s)
+		}
+	}
+
+	addIfNotEmpty(constant.RuntimeDBPassword)
+	addIfNotEmpty(constant.RuntimeDBUser)
+	addIfNotEmpty(constant.RuntimeDBHost)
+	addIfNotEmpty(constant.RuntimeDBName)
+	addIfNotEmpty(constant.RuntimeDBPath)
+	addIfNotEmpty(constant.RuntimeDBDSN)
+
+	return secrets
+}
+
 // BuildShellEnvPrefix 将 KEY=VALUE 环境变量切片转换为 shell 前缀。
 func BuildShellEnvPrefix(envs []string) string {
 	parts := make([]string, 0, len(envs))

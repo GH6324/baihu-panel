@@ -2,6 +2,7 @@ package reposync
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -13,7 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/engigu/baihu-panel/internal/services/tasks"
+	"github.com/engigu/baihu-panel/internal/services"
+	"github.com/engigu/baihu-panel/internal/services/repo"
 	"github.com/engigu/baihu-panel/internal/utils"
 )
 
@@ -35,6 +37,7 @@ type Config struct {
 	TaskID         string
 	TaskLanguages  string
 	TaskTimeout    int
+	CommentToTask  string
 }
 
 func Run(args []string) {
@@ -58,8 +61,17 @@ func Run(args []string) {
 	fs.StringVar(&cfg.TaskLanguages, "task-langs", "", "Configured languages (JSON)")
 	fs.StringVar(&cfg.TaskID, "repo-task-id", "", "Original Task ID")
 	fs.IntVar(&cfg.TaskTimeout, "task-timeout", 30, "Task timeout (minutes)")
+	fs.StringVar(&cfg.CommentToTask, "commenttotask", "false", "Compatible with QL format script comment parsing (true/false)")
 
 	fs.Parse(args)
+	
+	// 处理 $SCRIPTS_DIR$ 代号替换
+	if strings.Contains(cfg.TargetPath, "$SCRIPTS_DIR$") {
+		scriptsDir := os.Getenv("BH_SCRIPTS_DIR")
+		if scriptsDir != "" {
+			cfg.TargetPath = filepath.Clean(strings.ReplaceAll(cfg.TargetPath, "$SCRIPTS_DIR$", scriptsDir))
+		}
+	}
 
 	fmt.Println("========================================")
 	fmt.Println("  仓库同步任务开始  ")
@@ -80,12 +92,47 @@ func Run(args []string) {
 		filterFiles(cfg)
 
 		if cfg.TaskID != "" {
-			tasks.ParseRepoScriptsAndAddCron(nil, cfg.TaskID, os.Stdout)
+			upsertedIDs, deletedIDs := repo.ParseRepoScriptsAndAddCron(cfg.TaskID, os.Stdout, cfg.CommentToTask == "true")
+			if len(upsertedIDs) > 0 || len(deletedIDs) > 0 {
+				notifyMainServerToSyncRepoTasks(cfg.TaskID, upsertedIDs, deletedIDs)
+			}
 		}
 	}
 	fmt.Println("\n========================================")
 	fmt.Println("  仓库同步任务完成  ")
 	fmt.Println("========================================")
+}
+
+func notifyMainServerToSyncRepoTasks(repoID string, upsertedIDs []string, deletedIDs []string) {
+	appCfg := services.GetConfig()
+	if appCfg != nil {
+		url := fmt.Sprintf("http://127.0.0.1:%d/internal/tasks/sync-repo-status", appCfg.Server.Port)
+		payload := map[string]interface{}{
+			"repo_id":      repoID,
+			"upserted_ids": upsertedIDs,
+			"deleted_ids":  deletedIDs,
+		}
+		jsonData, _ := json.Marshal(payload)
+		settings := services.NewSettingsService()
+		secret := settings.Get("security", "secret") // constant.SectionSecurity = "security", constant.KeySecret = "secret"
+
+		req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+		if err == nil {
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("X-Internal-Token", secret)
+			resp, reqErr := http.DefaultClient.Do(req)
+			if reqErr == nil {
+				defer resp.Body.Close()
+				if resp.StatusCode == 200 {
+					fmt.Println(">> [通知] 已成功将变动任务增量同步至主程序调度器")
+				} else {
+					fmt.Printf(">> [通知] 调度器刷新异常，主程序响应状态码: %d\n", resp.StatusCode)
+				}
+			} else {
+				fmt.Printf(">> [通知] 无法连接到主程序进行增量刷新: %v\n", reqErr)
+			}
+		}
+	}
 }
 
 func syncGit(cfg Config) {
@@ -381,9 +428,7 @@ func (c *cleanWriter) Write(p []byte) (n int, err error) {
 func (c *cleanWriter) Flush() {
 	if len(c.buf) > 0 {
 		s := string(c.buf)
-		if strings.HasSuffix(s, "\r") {
-			s = s[:len(s)-1]
-		}
+		s = strings.TrimSuffix(s, "\r")
 		s = ansiRegex.ReplaceAllString(s, "")
 		if s != "" {
 			c.out.Write([]byte(s + "\n"))

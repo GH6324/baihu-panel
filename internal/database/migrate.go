@@ -95,29 +95,6 @@ func getModelSignature(models []interface{}) string {
 	return hex.EncodeToString(hash[:])
 }
 
-// hasGormTypeText 检查 gorm tag 中是否包含 type:text
-func hasGormTypeText(gormTag string) bool {
-	for _, part := range strings.Split(gormTag, ";") {
-		if kv := strings.SplitN(strings.TrimSpace(part), ":", 2); len(kv) == 2 {
-			if strings.TrimSpace(kv[0]) == "type" && strings.EqualFold(strings.TrimSpace(kv[1]), "text") {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-// parseGormColumn 从 gorm tag 中提取 column:xxx
-func parseGormColumn(gormTag string) string {
-	for _, part := range strings.Split(gormTag, ";") {
-		if kv := strings.SplitN(strings.TrimSpace(part), ":", 2); len(kv) == 2 {
-			if strings.TrimSpace(kv[0]) == "column" {
-				return strings.TrimSpace(kv[1])
-			}
-		}
-	}
-	return ""
-}
 
 // customMigrations 自定义迁移（处理 AutoMigrate 无法自动完成的变更）
 func customMigrations() error {

@@ -11,8 +11,10 @@ import (
 	"github.com/engigu/baihu-panel/internal/services"
 	"github.com/engigu/baihu-panel/internal/services/tasks"
 	"github.com/engigu/baihu-panel/internal/utils"
+	"github.com/engigu/baihu-panel/internal/logger"
 
 	"github.com/gin-gonic/gin"
+	"os"
 )
 
 type TaskController struct {
@@ -321,11 +323,19 @@ func (tc *TaskController) DeleteTask(c *gin.Context) {
 		return
 	}
 
-	// 获取任务信息（用于通知 agent）
+	// 获取任务信息（用于通知 agent 和物理删除校验）
 	task := tc.taskService.GetTaskByID(id)
-	var agentID *string
-	if task != nil {
-		agentID = task.AgentID
+	if task == nil {
+		utils.NotFound(c, "任务不存在")
+		return
+	}
+
+	agentID := task.AgentID
+	deleteFiles := c.Query("delete_files") == "true"
+
+	// 如果需要删除物理文件且是仓库任务
+	if deleteFiles && task.Type == constant.TaskTypeRepo {
+		tc.deleteRepoPhysicalFiles(task)
 	}
 
 	tc.executorService.RemoveCronTask(id)
@@ -342,6 +352,67 @@ func (tc *TaskController) DeleteTask(c *gin.Context) {
 	}
 
 	utils.SuccessMsg(c, "删除成功")
+}
+
+// deleteRepoPhysicalFiles 删除仓库关联的物理文件
+func (tc *TaskController) deleteRepoPhysicalFiles(task *models.Task) {
+	if task.Type != constant.TaskTypeRepo {
+		return
+	}
+
+	logger.Infof("[Controller] 开始尝试物理删除任务关联文件: %s", task.Name)
+	var repoCfg models.RepoConfig
+	if err := json.Unmarshal([]byte(task.Config), &repoCfg); err != nil {
+		logger.Errorf("[Controller] 解析任务配置失败: %v", err)
+		return
+	}
+
+	targetPath := repoCfg.TargetPath
+	if targetPath == "" {
+		// 如果 TargetPath 为空，调用系统的计算函数获取默认目录名
+		repoId := utils.GetRepoIdentifier(repoCfg.SourceURL, repoCfg.Branch)
+		if repoId != "" {
+			targetPath = repoId
+			logger.Infof("[Controller] TargetPath 为空，使用计算出的标识符: %s", targetPath)
+		}
+	}
+
+	if targetPath == "" || targetPath == "$SCRIPTS_DIR$" {
+		logger.Warnf("[Controller] 任务 %s 无法确定有效的物理删除路径，跳过", task.Name)
+		return
+	}
+
+	// 确定绝对路径
+	scriptsDir, _ := filepath.Abs(constant.ScriptsWorkDir)
+	fullPath := targetPath
+	if strings.HasPrefix(targetPath, "$SCRIPTS_DIR$") {
+		fullPath = filepath.Join(scriptsDir, strings.TrimPrefix(targetPath, "$SCRIPTS_DIR$"))
+	} else if !filepath.IsAbs(targetPath) {
+		fullPath = filepath.Join(scriptsDir, targetPath)
+	}
+
+	absTargetPath, _ := filepath.Abs(fullPath)
+	logger.Infof("[Controller] 最终计算的绝对路径: %s, Scripts目录: %s", absTargetPath, scriptsDir)
+	scriptsDir, _ = filepath.Abs(constant.ScriptsWorkDir)
+
+	// 安全检查：使用 Rel 判断路径关系
+	rel, err := filepath.Rel(scriptsDir, absTargetPath)
+	if err != nil {
+		logger.Errorf("[Controller] 计算相对路径失败: %v", err)
+		return
+	}
+
+	// 必须是在 scripts 目录下（不以 .. 开头）且不能是 scripts 目录本身 (.)
+	if rel != "." && !strings.HasPrefix(rel, "..") {
+		err := os.RemoveAll(absTargetPath)
+		if err != nil {
+			logger.Errorf("[Controller] 物理删除文件夹失败: %s, 路径: %s, 错误: %v", task.Name, absTargetPath, err)
+		} else {
+			logger.Infof("[Controller] 已成功物理删除文件夹: %s, 路径: %s", task.Name, absTargetPath)
+		}
+	} else {
+		logger.Warnf("[Controller] 拒绝物理删除安全目录之外的路径: %s", absTargetPath)
+	}
 }
 
 func (tc *TaskController) BatchDeleteTasks(c *gin.Context) {
@@ -474,4 +545,21 @@ func (tc *TaskController) GetTags(c *gin.Context) {
 		return
 	}
 	utils.Success(c, tags)
+}
+
+// SyncRepoTasks 增量同步仓库任务状态（供本地 reposync 进程调用）
+func (tc *TaskController) SyncRepoTasks(c *gin.Context) {
+	var req struct {
+		RepoID      string   `json:"repo_id"`
+		UpsertedIDs []string `json:"upserted_ids"`
+		DeletedIDs  []string `json:"deleted_ids"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.BadRequest(c, err.Error())
+		return
+	}
+
+	tc.executorService.SyncRepoTasks(req.UpsertedIDs, req.DeletedIDs)
+	utils.SuccessMsg(c, "增量同步成功")
 }

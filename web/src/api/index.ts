@@ -70,7 +70,12 @@ export const api = {
     },
     create: (data: Partial<Task>) => request<Task>('/tasks', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Partial<Task>) => request<Task>(`/tasks/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    delete: (id: string) => request(`/tasks/${id}`, { method: 'DELETE' }),
+    delete: (id: string, params?: { delete_files?: boolean }) => {
+      const query = new URLSearchParams()
+      if (params?.delete_files !== undefined) query.set('delete_files', String(params.delete_files))
+      const queryString = query.toString()
+      return request(`/tasks/${id}${queryString ? '?' + queryString : ''}`, { method: 'DELETE' })
+    },
     batchDelete: (ids: string[]) => request<{ count: number }>('/tasks/batch-delete', { method: 'POST', body: JSON.stringify({ ids }) }),
     batchDeleteByQuery: (params?: { name?: string, agent_id?: string, tags?: string, type?: string }) => {
       const query = new URLSearchParams()
@@ -382,6 +387,7 @@ export interface RepoConfig {
   dependence?: string
   extensions?: string
   auto_add_cron?: boolean
+  commenttotask?: string
   concurrency?: number
   repo_source?: string
 }

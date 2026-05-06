@@ -372,7 +372,11 @@ func (s *Scheduler) executeTask(req *ExecutionRequest) (*ExecutionResult, error)
 		req.Command = utils.BuildMiseCommand(req.Command, req.Languages)
 		req.UseMise = false
 	}
-	s.logger.Infof("[Scheduler] 命令: %s", req.Command)
+	// 确保系统级敏感信息（数据库地址、账号、密码等）始终在脱敏列表中
+	allSecrets := append([]string{}, req.Secrets...)
+	allSecrets = append(allSecrets, utils.GetSystemSecrets()...)
+
+	s.logger.Infof("[Scheduler] 命令: %s", utils.MaskSecrets(req.Command, allSecrets))
 
 	if s.config.Verbose {
 		workDir := req.WorkDir

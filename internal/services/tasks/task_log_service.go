@@ -89,6 +89,11 @@ func (s *TaskLogService) UpdateTaskDuration(logID string, duration int64) error 
 	return database.DB.Model(&models.TaskLog{}).Where("id = ?", logID).Update("duration", duration).Error
 }
 
+// UpdateLogCommand 更新日志中的命令内容（用于动态生成的命令脱敏）
+func (s *TaskLogService) UpdateLogCommand(logID string, command string) error {
+	return database.DB.Model(&models.TaskLog{}).Where("id = ?", logID).Update("command", models.BigText(command)).Error
+}
+
 // UpdateTaskStats 更新任务统计
 func (s *TaskLogService) UpdateTaskStats(taskID string, status string) {
 	if s.sendStatsService == nil {

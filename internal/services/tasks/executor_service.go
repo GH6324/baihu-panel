@@ -128,8 +128,12 @@ func (h *ServerSchedulerHandler) OnTaskExecuting(req *executor.ExecutionRequest)
 		return nil, nil, nil
 	}
 
-	// 1. 创建初始日志记录
-	taskLog, err := h.es.taskLogService.CreateEmptyLog(task.ID, req.Command)
+	// 1. 创建初始日志记录（对系统敏感信息进行全面脱敏处理）
+	masks := append([]string{}, req.Secrets...)
+	masks = append(masks, utils.GetSystemSecrets()...)
+	maskedCommand := utils.MaskSecrets(req.Command, masks)
+
+	taskLog, err := h.es.taskLogService.CreateEmptyLog(task.ID, maskedCommand)
 	if err != nil {
 		return nil, nil, fmt.Errorf("创建初始日志失败: %v", err)
 	}
@@ -179,8 +183,8 @@ func (h *ServerSchedulerHandler) OnTaskHeartbeat(req *executor.ExecutionRequest,
 
 	// 每分钟打印一次任务还在运行的日志
 	if duration >= 60000 && (duration/60000 > (duration-3000)/60000) {
-		logger.Infof("[Scheduler] 任务运行中... (#%s 已耗时: %v)",
-			req.TaskID, (time.Duration(duration) * time.Millisecond).Round(time.Second))
+		logger.Infof("[Scheduler] 命令: %s (#%s 已耗时: %v)",
+			utils.MaskSecrets(req.Command, req.Secrets), req.TaskID, (time.Duration(duration) * time.Millisecond).Round(time.Second))
 	}
 }
 
@@ -455,6 +459,26 @@ func (es *ExecutorService) ExecuteDispatcher(ctx context.Context, req *executor.
 		if cmd != "" {
 			req.Command = cmd
 			req.WorkDir = workDir
+			req.UseMise = false // 仓库同步任务不使用 mise，由系统原生执行
+			// 强制脱敏并更新数据库日志
+			masks := append([]string{}, req.Secrets...)
+			masks = append(masks, utils.GetSystemSecrets()...)
+			
+			// 补充仓库特有的 AuthToken
+			var repoCfg models.RepoConfig
+			if err := json.Unmarshal([]byte(task.Config), &repoCfg); err == nil && repoCfg.AuthToken != "" {
+				masks = append(masks, repoCfg.AuthToken)
+			}
+
+			maskedCmd := utils.MaskSecrets(req.Command, masks)
+			
+			// 更新数据库中的任务日志命令内容
+			if req.LogID != "" {
+				es.taskLogService.UpdateLogCommand(req.LogID, maskedCmd)
+			}
+			
+			// 在控制台打印最终执行的脱敏命令
+			logger.Infof("[Executor] 仓库同步最终执行命令: %s", maskedCmd)
 		}
 	}
 
@@ -626,6 +650,27 @@ func (es *ExecutorService) ExecuteTask(taskID string, extraEnvs []string) *execu
 		Success:   true,
 		Status:    constant.TaskStatusQueued,
 		StartTime: time.Now(),
+	}
+}
+
+// SyncRepoTasks 增量同步仓库任务到调度器
+func (es *ExecutorService) SyncRepoTasks(upsertedIDs []string, deletedIDs []string) {
+	// 处理删除的任务
+	for _, id := range deletedIDs {
+		es.RemoveCronTask(id)
+	}
+
+	// 处理新增/更新的任务
+	if len(upsertedIDs) > 0 {
+		var tasks []models.Task
+		database.DB.Where("id IN ?", upsertedIDs).Find(&tasks)
+		for _, t := range tasks {
+			if utils.DerefBool(t.Enabled, true) {
+				es.AddCronTask(&t)
+			} else {
+				es.RemoveCronTask(t.ID)
+			}
+		}
 	}
 }
 
@@ -994,11 +1039,22 @@ func (es *ExecutorService) BuildRepoCommand(task *models.Task) (string, string) 
 		exePath = "baihu" // Fallback if executable path can't be found
 	}
 
+	// 尽量使用代号 $SCRIPTS_DIR$ 替代绝对路径，增加可读性和可移植性
+	scriptsDir, _ := filepath.Abs(constant.ScriptsWorkDir)
+	displayTargetPath := absTargetPath
+	if rel, err := filepath.Rel(scriptsDir, absTargetPath); err == nil && !strings.HasPrefix(rel, "..") {
+		if rel == "." {
+			displayTargetPath = "$SCRIPTS_DIR$"
+		} else {
+			displayTargetPath = "$SCRIPTS_DIR$/" + filepath.ToSlash(rel)
+		}
+	}
+
 	args := []string{
 		"reposync",
 		"--source-type", config.SourceType,
 		"--source-url", config.SourceURL,
-		"--target-path", absTargetPath,
+		"--target-path", displayTargetPath,
 	}
 	if config.Branch != "" {
 		args = append(args, "--branch", config.Branch)
@@ -1026,6 +1082,9 @@ func (es *ExecutorService) BuildRepoCommand(task *models.Task) (string, string) 
 	}
 	if config.Dependence != "" {
 		args = append(args, "--dependence", config.Dependence)
+	}
+	if config.CommentToTask == "true" {
+		args = append(args, "--commenttotask", "true")
 	}
 	if config.Extensions != "" {
 		args = append(args, "--extensions", config.Extensions)

@@ -19,6 +19,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 import { api, type Agent, type Task, type TaskLog } from '@/api'
 import { toast } from 'vue-sonner'
 import { useSiteSettings } from '@/composables/useSiteSettings'
@@ -41,6 +43,7 @@ const isEdit = ref(false)
 
 const showDeleteDialog = ref(false)
 const deleteTaskId = ref<string | null>(null)
+const deleteFiles = ref(false)
 
 const filterName = ref('')
 const filterTags = ref('')
@@ -169,6 +172,7 @@ const showBatchDeleteDialog = ref(false)
 
 function confirmDelete(id: string) {
   deleteTaskId.value = id
+  deleteFiles.value = false
   showDeleteDialog.value = true
 }
 
@@ -196,7 +200,7 @@ async function batchDeleteTasks() {
 async function deleteTask() {
   if (!deleteTaskId.value) return
   try {
-    await api.tasks.delete(deleteTaskId.value)
+    await api.tasks.delete(deleteTaskId.value, { delete_files: deleteFiles.value })
     toast.success('任务已删除')
     loadTasks()
   } catch { toast.error('删除失败') } 
@@ -898,13 +902,24 @@ watch(() => route.query.agent_id, (newVal: any) => {
 
     <!-- 删除确认 (单个) -->
     <BaihuDialog v-model:open="showDeleteDialog" title="确认删除任务">
-      <div class="text-sm text-muted-foreground leading-relaxed">
+      <div class="text-sm text-muted-foreground leading-relaxed py-2">
         确定要删除任务 <b class="text-foreground">{{ tasks.find(t => t.id === deleteTaskId)?.name }}</b> 吗？
         <p class="mt-2 text-destructive font-medium">⚠️ 此操作无法撤销。</p>
       </div>
       <template #footer>
-        <Button variant="ghost" @click="showDeleteDialog = false">取消</Button>
-        <Button variant="destructive" class="shadow-lg shadow-destructive/20" @click="deleteTask">确认删除</Button>
+        <div class="flex items-center justify-between w-full gap-4">
+          <div v-if="tasks.find(t => t.id === deleteTaskId)?.type === TASK_TYPE.REPO" 
+            class="flex items-center gap-2 mr-auto">
+            <Checkbox id="delete-files" v-model="deleteFiles" />
+            <Label for="delete-files" class="text-sm font-medium text-destructive cursor-pointer select-none">
+              同时物理删除仓库文件夹
+            </Label>
+          </div>
+          <div class="flex justify-end gap-2 ml-auto">
+            <Button variant="ghost" size="sm" @click="showDeleteDialog = false">取消</Button>
+            <Button variant="destructive" size="sm" @click="deleteTask">确定删除</Button>
+          </div>
+        </div>
       </template>
     </BaihuDialog>
   </div>

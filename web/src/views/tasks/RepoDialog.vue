@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import DirTreeSelect from '@/components/DirTreeSelect.vue'
-import { X, Globe, GitBranch, Shield, Zap, Clock, Download, Plus, Search, Check, ChevronsUpDown, Loader2, AlertCircle } from 'lucide-vue-next'
+import { X, Globe, GitBranch, Shield, Zap, Clock, Download, Plus, Search, Check, ChevronsUpDown, Loader2, AlertCircle, Terminal } from 'lucide-vue-next'
 import { api, type Task, type RepoConfig, type Agent, type MiseLanguage } from '@/api'
 import { toast } from 'vue-sonner'
 import { cn } from '@/lib/utils'
@@ -64,6 +64,7 @@ const repoConfig = ref<RepoConfig>({
   dependence: '',
   extensions: '',
   auto_add_cron: false,
+  commenttotask: 'false',
   concurrency: 1,
   repo_source: '',
   proxy: ''
@@ -78,6 +79,13 @@ const autoAddCron = computed({
   get: () => !!repoConfig.value.auto_add_cron,
   set: (val: boolean) => {
     repoConfig.value.auto_add_cron = val
+  }
+})
+
+const pullQlConfig = computed({
+  get: () => repoConfig.value.commenttotask === 'true',
+  set: (val: boolean) => {
+    repoConfig.value.commenttotask = val ? 'true' : 'false'
   }
 })
 
@@ -185,6 +193,110 @@ function updateLangName(index: number, name: string) {
 const showQlImportDialog = ref(false)
 const qlCommandInput = ref('')
 
+const showBaihuImportDialog = ref(false)
+const baihuCommandInput = ref('')
+
+function importFromBaihu() {
+  baihuCommandInput.value = ''
+  showBaihuImportDialog.value = true
+}
+
+function submitBaihuImport() {
+  const s = baihuCommandInput.value.trim()
+  if (!s) {
+    showBaihuImportDialog.value = false
+    return
+  }
+
+  // Parse arguments handling quotes
+  const args: string[] = []
+  const regex = /[^\s"']+|"([^"]*)"|'([^']*)'/g
+  let match
+  while ((match = regex.exec(s)) !== null) {
+    args.push(match[1] || match[2] || match[0])
+  }
+
+  let i = 0
+  // Skip leading 'baihu' or 'reposync'
+  if (args[i] === 'baihu') i++
+  if (args[i] === 'reposync') i++
+
+  let hasValidField = false
+  for (; i < args.length; i++) {
+    const arg = args[i]
+    if (!arg || !arg.startsWith('--')) continue
+
+    const value = args[i + 1]
+    if (value === undefined || value.startsWith('--')) continue
+
+    i++ // Skip value in next iteration
+    hasValidField = true
+
+    switch (arg) {
+      case '--source-type': repoConfig.value.source_type = value; break
+      case '--source-url': 
+        repoConfig.value.source_url = value
+        // Auto-generate name from URL if name is empty
+        if (!form.value.name) {
+          try {
+            const urlPaths = value.split('/')
+            const name = urlPaths[urlPaths.length - 1]?.replace('.git', '') || '未命名仓库'
+            form.value.name = '同步 ' + name
+          } catch { /* ignore */ }
+        }
+        break
+      case '--target-path':
+        // Strip $SCRIPTS_DIR$/ prefix for UI
+        if (value.startsWith('$SCRIPTS_DIR$/')) {
+          repoConfig.value.target_path = value.replace('$SCRIPTS_DIR$/', '')
+        } else if (value === '$SCRIPTS_DIR$') {
+          repoConfig.value.target_path = ''
+        } else {
+          repoConfig.value.target_path = value
+        }
+        break
+      case '--branch': repoConfig.value.branch = value; break
+      case '--path': repoConfig.value.sparse_path = value; break
+      case '--single-file': isSingleFile.value = value === 'true'; break
+      case '--proxy-url': 
+        repoConfig.value.proxy_url = value
+        repoConfig.value.proxy = 'custom'
+        break
+      case '--auth-token': repoConfig.value.auth_token = value; break
+      case '--whitelist-paths': repoConfig.value.whitelist_paths = value; break
+      case '--blacklist': repoConfig.value.blacklist = value; break
+      case '--dependence': repoConfig.value.dependence = value; break
+      case '--extensions': repoConfig.value.extensions = value; break
+      case '--task-timeout': form.value.timeout = parseInt(value) || 30; break
+      case '--task-langs':
+        try {
+          const langs = JSON.parse(value)
+          if (Array.isArray(langs)) {
+            selectedLangs.value = langs.map(l => ({
+              name: l.name || '',
+              version: l.version || '',
+              availableVersions: []
+            }))
+            // Trigger available versions update
+            selectedLangs.value.forEach(l => updateAvailableVersions(l))
+          }
+        } catch (e) {
+          console.error('Parse task-langs failed', e)
+        }
+        break
+    }
+  }
+
+  if (hasValidField) {
+    repoConfig.value.auto_add_cron = true
+    repoConfig.value.commenttotask = 'true'
+    toast.success('命令解析成功，已自动填充表单')
+    showBaihuImportDialog.value = false
+  } else {
+    toast.error('未识别到有效的 reposync 参数')
+  }
+}
+
 function importFromQl() {
   qlCommandInput.value = ''
   showQlImportDialog.value = true
@@ -234,6 +346,7 @@ function submitQlImport() {
   if (args[7]) repoConfig.value.extensions = args[7]
   
   repoConfig.value.auto_add_cron = true
+  repoConfig.value.commenttotask = 'true'
   repoConfig.value.repo_source = 'ql'
   toast.success('指令解析成功，已开启自动添加任务，请继续完善其他设置')
   showQlImportDialog.value = false
@@ -325,6 +438,7 @@ watch(() => props.open, async (val: boolean) => {
       dependence: '',
       extensions: '',
       auto_add_cron: false,
+      commenttotask: 'false',
       concurrency: 1,
       repo_source: ''
     }
@@ -428,10 +542,16 @@ async function save() {
             <DialogTitle class="text-xl font-bold">
               {{ isEdit ? '编辑仓库同步' : '新建仓库同步' }}
             </DialogTitle>
-            <Button v-if="!isEdit" variant="outline" size="sm" @click="importFromQl" class="h-8 gap-1.5 bg-primary/5 hover:bg-primary/10 border-primary/20 hover:border-primary/40 text-primary">
-              <Download class="w-3.5 h-3.5" />
-              青龙格式导入
-            </Button>
+            <div class="flex items-center gap-2">
+              <Button v-if="!isEdit" variant="outline" size="sm" @click="importFromBaihu" class="h-8 gap-1.5 bg-primary/5 hover:bg-primary/10 border-primary/20 hover:border-primary/40 text-primary">
+                <Terminal class="w-3.5 h-3.5" />
+                Baihu 命令导入
+              </Button>
+              <Button v-if="!isEdit" variant="outline" size="sm" @click="importFromQl" class="h-8 gap-1.5 bg-muted/50 hover:bg-muted border-muted-foreground/20 text-muted-foreground">
+                <Download class="w-3.5 h-3.5" />
+                Qinlong格式导入
+              </Button>
+            </div>
           </div>
         </DialogHeader>
 
@@ -786,12 +906,12 @@ async function save() {
                       <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2 text-xs font-semibold">
                           <Zap :class="cn('h-3.5 w-3.5', autoAddCron ? 'text-primary' : 'text-muted-foreground')" /> 
-                          自动添加任务
+                          自动添加任务并解析元数据
                         </div>
-                        <Switch :model-value="autoAddCron" @update:model-value="(v: boolean) => autoAddCron = v" />
+                        <Switch :model-value="autoAddCron" @update:model-value="(v: boolean) => { autoAddCron = v; pullQlConfig = v }" />
                       </div>
-                      <p class="text-[11px] text-muted-foreground leading-relaxed">
-                        {{ autoAddCron ? '同步完成后将尝试自动分析脚本并注册定时任务。' : '仅拉取脚本，不自动注册成面板任务。' }}
+                      <p class="text-[11px] text-muted-foreground leading-relaxed italic">
+                        {{ autoAddCron ? '同步后将自动识别脚本中的 new Env("xxx") 和 cron 信息并注册任务。' : '仅拉取脚本，不自动注册任务。' }}
                       </p>
                     </div>
 
@@ -875,6 +995,57 @@ async function save() {
         </Button>
         <Button size="sm" @click="submitQlImport" class="shadow-sm">
           确定 <Download class="h-3 w-3 ml-1.5" />
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+
+  <!-- Baihu 导入提示对话框 -->
+  <Dialog :open="showBaihuImportDialog" @update:open="v => showBaihuImportDialog = v">
+    <DialogContent class="sm:max-w-[550px] p-0 border-none bg-background shadow-xl overflow-hidden">
+      <DialogHeader class="px-6 pt-6 pb-2">
+        <DialogTitle class="text-lg font-bold flex items-center gap-2">
+          <Terminal class="w-4 h-4 text-primary" />
+          命令行快速导入
+        </DialogTitle>
+      </DialogHeader>
+      
+      <div class="px-6 py-4 space-y-5">
+        <div class="p-3 rounded-lg bg-primary/5 border border-primary/10">
+          <p class="text-xs text-primary/80 leading-relaxed">
+            粘贴包含 <code class="px-1 py-0.5 rounded bg-primary/10 font-mono">reposync</code> 及其参数的命令，系统将自动填充表单。
+          </p>
+        </div>
+
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <Label class="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">示例命令</Label>
+            <button class="text-[10px] text-primary hover:underline font-medium" @click="baihuCommandInput = 'baihu reposync --source-url \'https://github.com/example/repo.git\' --branch \'main\' --blacklist \'test|dev\''">填入示例</button>
+          </div>
+          <div class="p-3 rounded-lg bg-muted/40 font-mono text-[11px] text-muted-foreground/70 border border-muted/20 leading-relaxed break-all">
+            baihu reposync --source-url 'https://...' --branch 'main' --blacklist '...'
+          </div>
+        </div>
+
+        <div class="relative group">
+          <textarea 
+            v-model="baihuCommandInput" 
+            placeholder="在此处粘贴完整指令，如 baihu reposync --source-url ..." 
+            class="w-full min-h-[140px] p-4 rounded-lg bg-muted/30 border border-muted/30 focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition-all text-sm resize-none outline-none"
+            @keydown.enter.ctrl.prevent="submitBaihuImport"
+          />
+          <div class="absolute bottom-3 right-3 text-[10px] text-muted-foreground/40 font-medium">
+            CTRL + ENTER 快速确认
+          </div>
+        </div>
+      </div>
+      
+      <DialogFooter class="px-6 pb-6 pt-2 flex gap-2">
+        <Button variant="ghost" size="sm" @click="showBaihuImportDialog = false" class="flex-1 h-9 rounded-md font-medium text-xs">
+          取消
+        </Button>
+        <Button size="sm" @click="submitBaihuImport" class="flex-1 h-9 rounded-md font-bold text-xs shadow-sm bg-primary hover:bg-primary/90">
+          确认解析并填充
         </Button>
       </DialogFooter>
     </DialogContent>

@@ -56,6 +56,7 @@ const envSearchQuery = ref('')
 const workDirCache = ref<Record<string, string>>({})
 const concurrency = ref(0)
 const concurrencyEnabled = ref(false)
+const commentToTaskEnabled = ref(false)
 const allEnvsEnabled = ref(false)
 const SCRIPTS_DIR_PLACEHPLDER = '$SCRIPTS_DIR$'
 const scriptsDir = ref<string>(PATHS.SCRIPTS_DIR)
@@ -281,10 +282,13 @@ watch(() => props.open, async (val: boolean) => {
 
         // 解析全部环境变量配置
         allEnvsEnabled.value = !!parsed['$task_all_envs']
+        // 解析注释解析配置
+        commentToTaskEnabled.value = !!parsed['$task_comment_to_task']
       } else {
         concurrency.value = 1
         concurrencyEnabled.value = true
         allEnvsEnabled.value = false
+        commentToTaskEnabled.value = false
       }
     } catch {
       concurrency.value = 1
@@ -419,6 +423,8 @@ async function save() {
     config['$task_concurrency'] = concurrencyEnabled.value ? 1 : 0
     // 更新注入全部环境变量字段
     config['$task_all_envs'] = !!allEnvsEnabled.value
+    // 更新注释解析字段
+    config['$task_comment_to_task'] = !!commentToTaskEnabled.value
 
     // 重新序列化配置
     form.value.config = JSON.stringify(config)
@@ -681,9 +687,37 @@ async function save() {
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-4 items-center gap-3">
                   <Label class="sm:text-right text-xs text-foreground/70 uppercase tracking-wider font-semibold">运行策略</Label>
-                  <div class="sm:col-span-3 flex items-center gap-3">
-                    <Input :model-value="form.timeout" @update:model-value="(v: string | number) => form.timeout = Number(v)" type="number" :min="0" class="w-20 h-9 bg-muted/30 text-center font-semibold text-xs" />
-                    <span class="text-[11px] font-semibold text-muted-foreground">分钟超时</span>
+                  <div class="sm:col-span-3 space-y-4">
+                    <div class="flex items-center gap-3">
+                      <Input :model-value="form.timeout" @update:model-value="(v: string | number) => form.timeout = Number(v)" type="number" :min="0" class="w-20 h-9 bg-muted/30 text-center font-semibold text-xs" />
+                      <span class="text-[11px] font-semibold text-muted-foreground">分钟超时</span>
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-muted/20 border border-muted-foreground/10 space-y-2.5">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2 text-xs font-semibold">
+                          <Zap :class="cn('h-3.5 w-3.5', commentToTaskEnabled ? 'text-primary' : 'text-muted-foreground')" /> 
+                          兼容 QL 格式任务脚本注释解析
+                        </div>
+                        <Switch :model-value="commentToTaskEnabled" @update:model-value="v => commentToTaskEnabled = v" />
+                      </div>
+                      <p class="text-[11px] text-muted-foreground leading-relaxed italic">
+                        {{ commentToTaskEnabled ? '尝试从脚本注释中提取任务名称和定时规则。' : '仅使用当前手动配置。' }}
+                      </p>
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-muted/20 border border-muted-foreground/10 space-y-2.5">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2 text-xs font-semibold">
+                          <Zap :class="cn('h-3.5 w-3.5', concurrencyEnabled ? 'text-primary' : 'text-muted-foreground')" /> 
+                          并发控制
+                        </div>
+                        <Switch :model-value="concurrencyEnabled" @update:model-value="v => concurrencyEnabled = v" />
+                      </div>
+                      <p class="text-[11px] text-muted-foreground leading-relaxed">
+                        {{ concurrencyEnabled ? '允许同时开启多个副本。' : '当前任务未结束时，新触发将被静默忽略。' }}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>

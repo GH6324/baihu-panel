@@ -57,6 +57,7 @@ type RepoConfig struct {
 	Dependence     string `json:"dependence"`      // 脚本依赖文件关键词，竖线分割
 	Extensions     string `json:"extensions"`      // 脚本文件后缀关键词，竖线分割
 	AutoAddCron    bool   `json:"auto_add_cron"`   // 自动解析脚本注释添加定时任务
+	CommentToTask  string `json:"commenttotask"`   // 兼容 QL 格式任务脚本注释解析
 	RepoSource     string `json:"repo_source"`     // 仓库来源，如果是选择了这个 ql 导入的仓库，= ql
 }
 

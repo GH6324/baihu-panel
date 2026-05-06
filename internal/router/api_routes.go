@@ -23,6 +23,13 @@ func initPublicAPIRoutes(api *gin.RouterGroup, c *Controllers) {
 
 	// 公开的站点设置（无需认证）
 	api.GET("/settings/public", c.Settings.GetPublicSiteSettings)
+
+	// 内部使用的 API（仅限本地调用，无需 Bearer 认证）
+	internalAPI := api.Group("/internal")
+	internalAPI.Use(middleware.LocalhostOnly())
+	{
+		internalAPI.POST("/tasks/sync-repo-status", c.Task.SyncRepoTasks)
+	}
 }
 
 func initAuthorizedAPIRoutes(api *gin.RouterGroup, c *Controllers) {

@@ -543,7 +543,7 @@ func (c *AgentController) handleWSMessage(ac *services.AgentConnection, agent *m
 }
 
 // handleTaskHeartbeat 处理任务心跳
-func (c *AgentController) handleTaskHeartbeat(agent *models.Agent, data json.RawMessage) {
+func (c *AgentController) handleTaskHeartbeat(_ *models.Agent, data json.RawMessage) {
 	var req struct {
 		LogID    string `json:"log_id"`
 		Duration int64  `json:"duration"`
@@ -616,7 +616,7 @@ func (c *AgentController) handleTaskResult(agent *models.Agent, data json.RawMes
 }
 
 // handleTaskLog 处理 Agent 发送的实时日志
-func (c *AgentController) handleTaskLog(agent *models.Agent, data json.RawMessage) {
+func (c *AgentController) handleTaskLog(_ *models.Agent, data json.RawMessage) {
 	var logMsg struct {
 		LogID   string `json:"log_id"`
 		Content string `json:"content"`

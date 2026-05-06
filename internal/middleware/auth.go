@@ -263,3 +263,25 @@ func SwaggerAuth() gin.HandlerFunc {
 		c.Abort()
 	}
 }
+
+// LocalhostOnly 仅允许本地回环地址访问，并进行简单的内部凭证校验
+func LocalhostOnly() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ip := c.ClientIP()
+		if ip != "127.0.0.1" && ip != "::1" {
+			utils.BadRequest(c, "仅允许本地访问")
+			c.Abort()
+			return
+		}
+
+		// 简单的内部通信认证
+		token := c.GetHeader("X-Internal-Token")
+		if token == "" || token != constant.Secret {
+			utils.Unauthorized(c, "无效的内部调用凭证")
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}
