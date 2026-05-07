@@ -24,6 +24,7 @@ import { Label } from '@/components/ui/label'
 import { api, type Agent, type Task, type TaskLog } from '@/api'
 import { toast } from 'vue-sonner'
 import { useSiteSettings } from '@/composables/useSiteSettings'
+import { useEventBus } from '@/composables/useEventBus'
 import { useRouter, useRoute } from 'vue-router'
 import { TASK_TYPE, AGENT_STATUS, TRIGGER_TYPE, TASK_STATUS } from '@/constants'
 import TextOverflow from '@/components/TextOverflow.vue'
@@ -275,7 +276,9 @@ function cleanupLogSocket() {
     logSocket.onmessage = null
     logSocket.onerror = null
     logSocket.onclose = null
-    logSocket.close()
+    if (logSocket.readyState === WebSocket.CONNECTING || logSocket.readyState === WebSocket.OPEN) {
+      logSocket.close()
+    }
     logSocket = null
   }
 }
@@ -472,6 +475,14 @@ onMounted(async () => {
   loadViewsFromSettings()
 })
 
+// 订阅任务状态实时更新
+useEventBus(['task_running', 'task_queued', 'task_success', 'task_failed', 'task_timeout'], (payload) => {
+  const task = tasks.value.find(t => t.id === payload.task_id)
+  if (task) {
+    task.running_status = payload.status
+  }
+})
+
 // 监听路由参数变化
 watch(() => route.query.agent_id, (newVal: any) => {
   filterAgentId.value = newVal ? String(newVal) : null
@@ -624,6 +635,7 @@ watch(() => route.query.agent_id, (newVal: any) => {
           <div v-for="(task, index) in tasks" :key="`large-${task.id}`"
             class="flex items-center gap-2 px-4 py-1.5 hover:bg-muted/30 transition-colors">
             <div v-if="task.running_status === 'running'" class="h-2 w-2 rounded-full bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.5)] shrink-0" title="运行中" />
+            <div v-else-if="task.running_status === 'queued' || task.running_status === 'pending'" class="h-2 w-2 rounded-full bg-blue-400 animate-pulse shrink-0" title="排队中" />
             <div v-else class="h-1.5 w-1.5 rounded-full bg-muted-foreground/20 shrink-0" />
             <div class="w-12 shrink-0 text-muted-foreground tabular-nums">#{{ total - (currentPage - 1) * pageSize - index }}</div>
             <span class="w-8 shrink-0 flex justify-center" :title="getTaskTypeTitle(task.type || 'task')">
@@ -720,6 +732,7 @@ watch(() => route.query.agent_id, (newVal: any) => {
           <div v-for="(task, index) in tasks" :key="`medium-${task.id}`"
             class="flex items-center gap-2 px-4 py-2.5 hover:bg-muted/30 transition-colors">
             <div v-if="task.running_status === 'running'" class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.5)] shrink-0" />
+            <div v-else-if="task.running_status === 'queued' || task.running_status === 'pending'" class="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse shrink-0" />
             <div v-else class="h-1 w-1 rounded-full bg-muted-foreground/20 shrink-0" />
             <div class="w-12 shrink-0 text-muted-foreground tabular-nums text-xs">#{{ total - (currentPage - 1) * pageSize - index }}</div>
             <div class="w-48 shrink-0 flex items-center gap-2 overflow-hidden">
@@ -789,6 +802,7 @@ watch(() => route.query.agent_id, (newVal: any) => {
           <div class="flex items-start justify-between mb-3 border-b border-border/40 pb-2">
             <div class="flex items-center gap-2 flex-1 min-w-0 pr-2">
               <div v-if="task.running_status === 'running'" class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.5)] shrink-0" />
+              <div v-else-if="task.running_status === 'queued' || task.running_status === 'pending'" class="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse shrink-0" />
               <div v-else class="h-1 w-1 rounded-full bg-muted-foreground/20 shrink-0" />
               <span class="text-xs text-muted-foreground tabular-nums flex-shrink-0">#{{ total - (currentPage - 1) * pageSize - index }}</span>
               <span class="shrink-0">

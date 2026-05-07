@@ -116,7 +116,15 @@ type ServerSchedulerHandler struct {
 }
 
 func (h *ServerSchedulerHandler) OnTaskScheduled(req *executor.ExecutionRequest) {
-	// 任务入队事件，可以在此处更新数据库状态为 "pending"
+	if req.TaskID != "" {
+		eventbus.DefaultBus.Publish(eventbus.Event{
+			Type: constant.EventTaskQueued,
+			Payload: map[string]interface{}{
+				"task_id": req.TaskID,
+				"status":  constant.TaskStatusQueued,
+			},
+		})
+	}
 }
 
 func (h *ServerSchedulerHandler) OnTaskExecuting(req *executor.ExecutionRequest) (io.Writer, io.Writer, error) {
@@ -165,6 +173,16 @@ func (h *ServerSchedulerHandler) OnTaskExecuting(req *executor.ExecutionRequest)
 		LogID:     req.LogID,
 		Status:    constant.TaskStatusRunning,
 		StartTime: time.Now(),
+	})
+
+	// 发布任务开始运行事件
+	eventbus.DefaultBus.Publish(eventbus.Event{
+		Type: constant.EventTaskRunning,
+		Payload: map[string]interface{}{
+			"task_id": req.TaskID,
+			"status":  constant.TaskStatusRunning,
+			"log_id":  req.LogID,
+		},
 	})
 
 	if req.Metadata.RetryIndex > 0 {

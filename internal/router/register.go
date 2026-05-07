@@ -23,6 +23,7 @@ func RegisterControllers() *Controllers {
 	scriptService := services.NewScriptService()
 	sendStatsService := services.NewSendStatsService()
 	agentWSManager := services.GetAgentWSManager()
+	systemWSManager := services.GetSystemWSManager()
 
 	taskLogService := tasks.NewTaskLogService(sendStatsService)
 	// 创建任务执行服务（需要依赖注入）
@@ -40,7 +41,7 @@ func RegisterControllers() *Controllers {
 	executorService.StartCron()
 
 	// 初始化所有关注系统总线的服务
-	setupEventHandlers(appLogService, notifyService, loginLogService)
+	setupEventHandlers(appLogService, notifyService, loginLogService, systemWSManager)
 	go startAppLogCleanup(appLogService)
 
 	// 初始化并返回控制器
@@ -61,6 +62,7 @@ func RegisterControllers() *Controllers {
 		Mise:         controllers.NewMiseController(services.NewMiseService()),
 		Notification: controllers.NewNotificationController(),
 		AppLog:       controllers.NewAppLogController(),
+		SystemWS:     controllers.NewSystemWSController(),
 	}
 }
 

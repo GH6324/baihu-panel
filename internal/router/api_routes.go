@@ -61,6 +61,7 @@ func initAuthorizedAPIRoutes(api *gin.RouterGroup, c *Controllers) {
 			registerMiseRoutes(adminOnly, c)
 			registerNotificationRoutes(adminOnly, c)
 			registerAppLogRoutes(adminOnly, c)
+			registerSystemWSRoutes(adminOnly, c)
 		}
 	}
 
@@ -254,6 +255,10 @@ func registerAppLogRoutes(g *gin.RouterGroup, c *Controllers) {
 		appLogs.POST("/read", c.AppLog.MarkAsRead)
 		appLogs.POST("/clear", c.AppLog.ClearLogs)
 	}
+}
+
+func registerSystemWSRoutes(g *gin.RouterGroup, c *Controllers) {
+	g.GET("/ws/events", c.SystemWS.HandleEvents)
 }
 
 func initAgentAPIRoutes(root *gin.RouterGroup, c *Controllers) {
