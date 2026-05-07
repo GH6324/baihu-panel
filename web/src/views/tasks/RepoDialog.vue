@@ -15,6 +15,7 @@ import { api, type Task, type RepoConfig, type Agent, type MiseLanguage } from '
 import { toast } from 'vue-sonner'
 import { cn } from '@/lib/utils'
 import { getCronDescription } from '@/utils/cron'
+import { parseBaihuCommand, parseQlCommand } from '@/utils/repo-parser'
 import TaskNotificationConfig from './components/TaskNotificationConfig.vue'
 
 const notificationConfigRef = ref<InstanceType<typeof TaskNotificationConfig> | null>(null)
@@ -202,99 +203,32 @@ function importFromBaihu() {
 }
 
 function submitBaihuImport() {
-  const s = baihuCommandInput.value.trim()
-  if (!s) {
-    showBaihuImportDialog.value = false
+  const result = parseBaihuCommand(baihuCommandInput.value)
+  if (!result) {
+    if (!baihuCommandInput.value.trim()) {
+      showBaihuImportDialog.value = false
+    } else {
+      toast.error('未识别到有效的 reposync 参数')
+    }
     return
   }
 
-  // Parse arguments handling quotes
-  const args: string[] = []
-  const regex = /[^\s"']+|"([^"]*)"|'([^']*)'/g
-  let match
-  while ((match = regex.exec(s)) !== null) {
-    args.push(match[1] || match[2] || match[0])
+  // 应用解析结果
+  repoConfig.value = { ...repoConfig.value, ...result.repoConfig }
+  if (result.task.name) form.value.name = result.task.name
+  if (result.task.timeout) form.value.timeout = result.task.timeout
+  
+  if (result.task.languages) {
+    selectedLangs.value = result.task.languages.map(l => ({
+      name: l.name || '',
+      version: l.version || '',
+      availableVersions: []
+    }))
+    selectedLangs.value.forEach(l => updateAvailableVersions(l))
   }
 
-  let i = 0
-  // Skip leading 'baihu' or 'reposync'
-  if (args[i] === 'baihu') i++
-  if (args[i] === 'reposync') i++
-
-  let hasValidField = false
-  for (; i < args.length; i++) {
-    const arg = args[i]
-    if (!arg || !arg.startsWith('--')) continue
-
-    const value = args[i + 1]
-    if (value === undefined || value.startsWith('--')) continue
-
-    i++ // Skip value in next iteration
-    hasValidField = true
-
-    switch (arg) {
-      case '--source-type': repoConfig.value.source_type = value; break
-      case '--source-url': 
-        repoConfig.value.source_url = value
-        // Auto-generate name from URL if name is empty
-        if (!form.value.name) {
-          try {
-            const urlPaths = value.split('/')
-            const name = urlPaths[urlPaths.length - 1]?.replace('.git', '') || '未命名仓库'
-            form.value.name = '同步 ' + name
-          } catch { /* ignore */ }
-        }
-        break
-      case '--target-path':
-        // Strip $SCRIPTS_DIR$/ prefix for UI
-        if (value.startsWith('$SCRIPTS_DIR$/')) {
-          repoConfig.value.target_path = value.replace('$SCRIPTS_DIR$/', '')
-        } else if (value === '$SCRIPTS_DIR$') {
-          repoConfig.value.target_path = ''
-        } else {
-          repoConfig.value.target_path = value
-        }
-        break
-      case '--branch': repoConfig.value.branch = value; break
-      case '--path': repoConfig.value.sparse_path = value; break
-      case '--single-file': isSingleFile.value = value === 'true'; break
-      case '--proxy-url': 
-        repoConfig.value.proxy_url = value
-        repoConfig.value.proxy = 'custom'
-        break
-      case '--auth-token': repoConfig.value.auth_token = value; break
-      case '--whitelist-paths': repoConfig.value.whitelist_paths = value; break
-      case '--blacklist': repoConfig.value.blacklist = value; break
-      case '--dependence': repoConfig.value.dependence = value; break
-      case '--extensions': repoConfig.value.extensions = value; break
-      case '--task-timeout': form.value.timeout = parseInt(value) || 30; break
-      case '--task-langs':
-        try {
-          const langs = JSON.parse(value)
-          if (Array.isArray(langs)) {
-            selectedLangs.value = langs.map(l => ({
-              name: l.name || '',
-              version: l.version || '',
-              availableVersions: []
-            }))
-            // Trigger available versions update
-            selectedLangs.value.forEach(l => updateAvailableVersions(l))
-          }
-        } catch (e) {
-          console.error('Parse task-langs failed', e)
-        }
-        break
-    }
-  }
-
-  if (hasValidField) {
-    repoConfig.value.auto_add_cron = true
-    repoConfig.value.commenttotask = 'true'
-    toast.success('命令解析成功，已自动填充表单')
-    showBaihuImportDialog.value = false
-  } else {
-    toast.error('未识别到有效的 reposync 参数')
-  }
+  // toast.success('命令解析成功，已自动填充表单')
+  showBaihuImportDialog.value = false
 }
 
 function importFromQl() {
@@ -303,51 +237,20 @@ function importFromQl() {
 }
 
 function submitQlImport() {
-  const s = qlCommandInput.value.trim()
-  if (!s) {
-    showQlImportDialog.value = false
-    return
-  }
-  if (!s.startsWith('ql repo')) {
-    toast.error('无效的指令：必须以 ql repo 开头')
+  const result = parseQlCommand(qlCommandInput.value)
+  if (!result) {
+    if (!qlCommandInput.value.trim()) {
+      showQlImportDialog.value = false
+    } else {
+      toast.error('无效的指令：必须以 ql repo 开头')
+    }
     return
   }
 
-  // Parse arguments handling quotes
-  const args: string[] = []
-  const regex = /[^\s"']+|"([^"]*)"|'([^']*)'/g
-  let match
-  while ((match = regex.exec(s)) !== null) {
-    args.push(match[1] || match[2] || match[0])
-  }
-  
-  if (args[2]) {
-    repoConfig.value.source_url = args[2]
-    repoConfig.value.source_type = 'git'
-    // form task name
-    let name = '同步 '
-    try {
-      const urlPaths = args[2]?.split('/')
-      if (urlPaths && urlPaths.length > 0) {
-        name += urlPaths[urlPaths.length - 1]?.replace('.git', '') || ''
-      } else {
-        name += '未命名仓库'
-      }
-    } catch {
-      name += '未命名仓库'
-    }
-    form.value.name = name
-  }
-  
-  if (args[3]) repoConfig.value.whitelist_paths = args[3]
-  if (args[4]) repoConfig.value.blacklist = args[4]
-  if (args[5]) repoConfig.value.dependence = args[5]
-  if (args[6]) repoConfig.value.branch = args[6]
-  if (args[7]) repoConfig.value.extensions = args[7]
-  
-  repoConfig.value.auto_add_cron = true
-  repoConfig.value.commenttotask = 'true'
-  repoConfig.value.repo_source = 'ql'
+  // 应用解析结果
+  repoConfig.value = { ...repoConfig.value, ...result.repoConfig }
+  if (result.task.name) form.value.name = result.task.name
+
   toast.success('指令解析成功，已开启自动添加任务，请继续完善其他设置')
   showQlImportDialog.value = false
 }
