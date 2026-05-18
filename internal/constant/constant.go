@@ -34,7 +34,25 @@ func init() {
 
 // ResolveAppRootDir 获取应用程序的绝对根目录路径。
 func ResolveAppRootDir() string {
-	// 1. 检查当前可执行文件路径
+	// 1. 检查当前工作目录（CWD）及其上级目录
+	if cwd, err := os.Getwd(); err == nil {
+		dir := cwd
+		for {
+			if _, err := os.Stat(filepath.Join(dir, "configs", "config.ini")); err == nil {
+				return dir
+			}
+			if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+				return dir
+			}
+			parent := filepath.Dir(dir)
+			if parent == dir {
+				break
+			}
+			dir = parent
+		}
+	}
+
+	// 2. 检查当前可执行文件路径及其上级目录
 	if exe, err := os.Executable(); err == nil {
 		dir := filepath.Dir(exe)
 		for {
@@ -51,7 +69,8 @@ func ResolveAppRootDir() string {
 			dir = parent
 		}
 	}
-	// 2. 回退到当前工作目录
+
+	// 3. 兜底回退到当前工作目录
 	if cwd, err := os.Getwd(); err == nil {
 		return cwd
 	}
