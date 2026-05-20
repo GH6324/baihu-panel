@@ -29,6 +29,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { TASK_TYPE, AGENT_STATUS, TRIGGER_TYPE, TASK_STATUS } from '@/constants'
 import TextOverflow from '@/components/TextOverflow.vue'
 import { getCronDescription } from '@/utils/cron'
+import { generateBaihuCommand } from '@/utils/repo-parser'
 
 
 const router = useRouter()
@@ -167,6 +168,29 @@ function duplicateTask(task: Task) {
   } else {
     showTaskDialog.value = true
   }
+}
+
+const showExportDialog = ref(false)
+const exportCommandText = ref('')
+
+function openExportDialog(task: Task) {
+  const cmd = generateBaihuCommand(task)
+  if (!cmd) {
+    toast.error('生成导出指令失败')
+    return
+  }
+  exportCommandText.value = cmd
+  showExportDialog.value = true
+}
+
+function copyCommandText() {
+  if (!exportCommandText.value) return
+  navigator.clipboard.writeText(exportCommandText.value).then(() => {
+    toast.success('同步指令已复制到剪贴板')
+    showExportDialog.value = false
+  }).catch(() => {
+    toast.error('复制失败，请手动选择复制')
+  })
 }
 
 const showBatchDeleteDialog = ref(false)
@@ -709,6 +733,10 @@ watch(() => route.query.agent_id, (newVal: any) => {
                     <Copy class="h-3.5 w-3.5 mr-2" />
                     <span>复制任务</span>
                   </DropdownMenuItem>
+                  <DropdownMenuItem v-if="task.type === TASK_TYPE.REPO" @click="openExportDialog(task)">
+                    <Terminal class="h-3.5 w-3.5 mr-2" />
+                    <span>导出指令</span>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem class="text-destructive focus:text-destructive" @click="confirmDelete(task.id)">
                     <Trash2 class="h-3.5 w-3.5 mr-2" />
@@ -788,6 +816,10 @@ watch(() => route.query.agent_id, (newVal: any) => {
                   <DropdownMenuItem @click="duplicateTask(task)">
                     <Copy class="h-3.5 w-3.5 mr-2" />
                     <span>复制任务</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem v-if="task.type === TASK_TYPE.REPO" @click="openExportDialog(task)">
+                    <Terminal class="h-3.5 w-3.5 mr-2" />
+                    <span>导出指令</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem class="text-destructive focus:text-destructive" @click="confirmDelete(task.id)">
@@ -876,6 +908,10 @@ watch(() => route.query.agent_id, (newVal: any) => {
                   <Copy class="h-4 w-4 mr-2" />
                   <span>复制任务</span>
                 </DropdownMenuItem>
+                <DropdownMenuItem v-if="task.type === TASK_TYPE.REPO" @click="openExportDialog(task)">
+                  <Terminal class="h-4 w-4 mr-2" />
+                  <span>导出指令</span>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem class="text-destructive focus:text-destructive" @click="confirmDelete(task.id)">
                   <Trash2 class="h-4 w-4 mr-2" />
@@ -940,6 +976,30 @@ watch(() => route.query.agent_id, (newVal: any) => {
             <Button variant="destructive" size="sm" @click="deleteTask">确定删除</Button>
           </div>
         </div>
+      </template>
+    </BaihuDialog>
+
+    <!-- 导出指令弹窗 -->
+    <BaihuDialog v-model:open="showExportDialog" title="导出同步指令">
+      <div class="space-y-4 py-2">
+        <div class="text-xs text-muted-foreground leading-relaxed">
+          您可以复制并分享此指令，在其他部署了白虎面板的系统上导入该仓库同步任务：
+        </div>
+        <div class="relative">
+          <textarea
+            readonly
+            :value="exportCommandText"
+            rows="6"
+            class="w-full p-4 font-mono text-[11px] leading-normal bg-muted/50 border border-muted-foreground/10 rounded-lg resize-none select-all focus:outline-none focus:ring-1 focus:ring-primary shadow-inner"
+          />
+        </div>
+      </div>
+      <template #footer>
+        <Button variant="ghost" size="sm" @click="showExportDialog = false">关闭</Button>
+        <Button size="sm" class="gap-1.5 shadow-md shadow-primary/20 font-medium" @click="copyCommandText">
+          <Copy class="h-3.5 w-3.5" />
+          <span>一键复制</span>
+        </Button>
       </template>
     </BaihuDialog>
   </div>
