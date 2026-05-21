@@ -23,6 +23,7 @@ import { api, type Agent, type AgentToken } from '@/api'
 import { toast } from 'vue-sonner'
 import { useRouter } from 'vue-router'
 import { AGENT_STATUS } from '@/constants'
+import StatusDot from '@/components/StatusDot.vue'
 
 const router = useRouter()
 
@@ -339,7 +340,6 @@ onUnmounted(() => {
             <!-- 表头 -->
             <div class="flex items-center gap-4 px-4 py-1.5 border-b bg-muted/20 text-xs text-muted-foreground font-medium">
               <span class="w-12 shrink-0 pl-1">序号</span>
-              <span class="w-8 shrink-0 text-center">状态</span>
               <span class="w-48 shrink-0">名称</span>
               <span class="w-32 shrink-0">IP 地址</span>
               <span class="w-32 shrink-0">主机名</span>
@@ -354,16 +354,9 @@ onUnmounted(() => {
                 {{ searchQuery ? '无匹配结果' : '暂无 Agent' }}
               </div>
               <div v-for="(agent, index) in filteredAgents" :key="`large-${agent.id}`"
-                class="flex items-center gap-4 px-4 py-1.5 hover:bg-muted/30 transition-colors">
-                <div class="w-12 shrink-0 pl-1 text-muted-foreground tabular-nums">#{{ filteredAgents.length - index }}</div>
-                <span class="w-8 shrink-0 flex justify-center" :title="isOnline(agent) ? '在线' : '离线'">
-                  <div v-if="isOnline(agent)" class="h-5 w-5 rounded-full bg-green-500/10 flex items-center justify-center">
-                    <Wifi class="h-3 w-3 text-green-500" />
-                  </div>
-                  <div v-else class="h-5 w-5 rounded-full bg-muted flex items-center justify-center">
-                    <WifiOff class="h-3 w-3 text-muted-foreground" />
-                  </div>
-                </span>
+                class="flex items-center gap-2 px-4 py-1.5 hover:bg-muted/30 transition-colors">
+                <StatusDot :state="isOnline(agent) ? 'online' : 'offline'" :title="isOnline(agent) ? '在线' : '离线'" />
+                <div class="w-12 shrink-0 pl-1 text-muted-foreground tabular-nums text-sm">#{{ filteredAgents.length - index }}</div>
                 <div class="w-48 shrink-0 flex flex-col justify-center gap-0.5 overflow-hidden">
                   <span class="font-medium truncate cursor-pointer hover:text-primary transition-colors" @click="viewDetail(agent)">{{ agent.name }}</span>
                   <div v-if="agent.description" class="text-[10px] text-muted-foreground truncate">{{ agent.description }}</div>
@@ -413,7 +406,6 @@ onUnmounted(() => {
             <!-- 表头 -->
             <div class="flex items-center gap-4 px-4 py-1.5 border-b bg-muted/20 text-xs text-muted-foreground font-medium">
               <span class="w-12 shrink-0 pl-1">序号</span>
-              <span class="w-8 shrink-0 text-center">状态</span>
               <span class="w-48 shrink-0">名称</span>
               <span class="flex-1 min-w-0">IP 地址</span>
               <span class="w-24 shrink-0 text-center">操作</span>
@@ -421,16 +413,9 @@ onUnmounted(() => {
             <!-- 列表 -->
             <div class="divide-y text-sm">
               <div v-for="(agent, index) in filteredAgents" :key="`medium-${agent.id}`"
-                class="flex items-center gap-4 px-4 py-2.5 hover:bg-muted/30 transition-colors">
+                class="flex items-center gap-2 px-4 py-2.5 hover:bg-muted/30 transition-colors">
+                <StatusDot :state="isOnline(agent) ? 'online' : 'offline'" :title="isOnline(agent) ? '在线' : '离线'" />
                 <div class="w-12 shrink-0 pl-1 text-muted-foreground tabular-nums text-xs">#{{ filteredAgents.length - index }}</div>
-                <span class="w-8 shrink-0 flex justify-center" :title="isOnline(agent) ? '在线' : '离线'">
-                  <div v-if="isOnline(agent)" class="h-5 w-5 rounded-full bg-green-500/10 flex items-center justify-center">
-                    <Wifi class="h-3 w-3 text-green-500" />
-                  </div>
-                  <div v-else class="h-5 w-5 rounded-full bg-muted flex items-center justify-center">
-                    <WifiOff class="h-3 w-3 text-muted-foreground" />
-                  </div>
-                </span>
                 <div class="w-48 shrink-0 flex flex-col justify-center gap-0.5 overflow-hidden">
                   <span class="font-medium truncate">{{ agent.name }}</span>
                   <div v-if="agent.description" class="text-[10px] text-muted-foreground truncate">{{ agent.description }}</div>
@@ -465,11 +450,8 @@ onUnmounted(() => {
             <div v-for="(agent, index) in filteredAgents" :key="`small-${agent.id}`" class="p-3 hover:bg-muted/50 transition-colors">
               <div class="flex items-start justify-between mb-3 border-b border-border/40 pb-2">
                 <div class="flex items-center gap-2 flex-1 min-w-0 pr-2">
+                  <StatusDot :state="isOnline(agent) ? 'online' : 'offline'" :title="isOnline(agent) ? '在线' : '离线'" />
                   <span class="text-xs text-muted-foreground tabular-nums flex-shrink-0">#{{ filteredAgents.length - index }}</span>
-                  <span class="flex items-center shrink-0">
-                    <Wifi v-if="isOnline(agent)" class="h-3.5 w-3.5 text-green-500" />
-                    <WifiOff v-else class="h-3.5 w-3.5 text-muted-foreground" />
-                  </span>
                   <div class="flex items-center gap-1.5 min-w-0 flex-1">
                     <span class="font-bold text-sm truncate" @click="viewDetail(agent)">{{ agent.name }}</span>
                   </div>

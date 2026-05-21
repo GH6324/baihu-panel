@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
+import StatusDot from '@/components/StatusDot.vue'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { api, type Agent, type Task, type TaskLog } from '@/api'
@@ -664,9 +665,10 @@ watch(() => route.query.agent_id, (newVal: any) => {
         <div class="divide-y text-sm">
           <div v-for="(task, index) in tasks" :key="`large-${task.id}`"
             class="flex items-center gap-2 px-4 py-1.5 hover:bg-muted/30 transition-colors">
-            <div v-if="task.running_status === 'running'" class="h-2 w-2 rounded-full bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.5)] shrink-0" title="运行中" />
-            <div v-else-if="task.running_status === 'queued' || task.running_status === 'pending'" class="h-2 w-2 rounded-full bg-blue-400 animate-pulse shrink-0" title="排队中" />
-            <div v-else class="h-1.5 w-1.5 rounded-full bg-muted-foreground/20 shrink-0" />
+            <StatusDot 
+              :state="task.running_status === 'running' ? 'running' : (task.running_status === 'queued' || task.running_status === 'pending' ? 'pending' : 'none')"
+              :title="task.running_status === 'running' ? '运行中' : (task.running_status === 'queued' || task.running_status === 'pending' ? '排队中' : '')" 
+            />
             <div class="w-12 shrink-0 text-muted-foreground tabular-nums">#{{ total - (currentPage - 1) * pageSize - index }}</div>
             <span class="w-8 shrink-0 flex justify-center" :title="getTaskTypeTitle(task.type || 'task')">
               <div class="relative">

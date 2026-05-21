@@ -8,8 +8,7 @@ import Pagination from '@/components/Pagination.vue'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import LogViewer from './LogViewer.vue'
 import {
-  RefreshCw, X, Search, GitBranch, Terminal,
-  AlertCircle, Ban, Clock, Zap as ZapIcon, Check, Trash2
+  RefreshCw, Search, GitBranch, Terminal, Trash2
 } from 'lucide-vue-next'
 import { api, type TaskLog } from '@/api'
 import LogDetailCard from '@/components/LogDetailCard.vue'
@@ -17,6 +16,7 @@ import BaihuDialog from '@/components/ui/BaihuDialog.vue'
 import { toast } from 'vue-sonner'
 import { useSiteSettings } from '@/composables/useSiteSettings'
 import TextOverflow from '@/components/TextOverflow.vue'
+import StatusDot from '@/components/StatusDot.vue'
 import { useEventBus } from '@/composables/useEventBus'
 
 const route = useRoute()
@@ -379,8 +379,7 @@ watch(() => route.query, (newQuery) => {
         <!-- 小屏表头 -->
         <div
           class="flex sm:hidden items-center gap-2 px-3 py-2 border-b bg-muted/20 text-xs text-muted-foreground font-medium">
-          <span class="w-3 shrink-0"></span>
-          <span class="w-14 shrink-0">序号</span>
+          <span class="w-14 shrink-0 pl-1">序号</span>
           <span class="w-8 shrink-0 text-center">类型</span>
           <span class="flex-1 min-w-0">任务名称</span>
           <span class="w-16 text-right shrink-0">耗时</span>
@@ -389,8 +388,7 @@ watch(() => route.query, (newQuery) => {
         <!-- 大屏表头 -->
         <div
           class="hidden sm:flex items-center gap-4 px-4 h-11 border-b bg-muted/20 text-sm text-muted-foreground font-medium">
-          <span class="w-3 shrink-0"></span>
-          <span class="w-16 shrink-0">序号</span>
+          <span class="w-16 shrink-0 pl-1">序号</span>
           <span class="w-12 shrink-0 text-center">类型</span>
           <span class="w-36 shrink-0">任务名称</span>
           <span class="flex-1 min-w-0">命令</span>
@@ -409,16 +407,8 @@ watch(() => route.query, (newQuery) => {
           ]" @click="selectLog(log)">
             <!-- 小屏行 -->
             <div class="flex sm:hidden items-center gap-2 px-3 py-2">
-              <span class="w-3 flex justify-center shrink-0">
-                <div v-if="log.status === TASK_STATUS.SUCCESS" class="h-1.5 w-1.5 rounded-full bg-green-500 shrink-0" title="成功"></div>
-                <div v-else-if="log.status === TASK_STATUS.FAILED" class="h-1.5 w-1.5 rounded-full bg-red-500 shrink-0" title="失败"></div>
-                <div v-else-if="log.status === TASK_STATUS.RUNNING" class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.5)] shrink-0" title="运行中"></div>
-                <div v-else-if="log.status === TASK_STATUS.PENDING" class="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse shrink-0" title="等待中"></div>
-                <div v-else-if="log.status === TASK_STATUS.TIMEOUT" class="h-1.5 w-1.5 rounded-full bg-orange-500 shrink-0" title="超时"></div>
-                <div v-else-if="log.status === TASK_STATUS.CANCELLED" class="h-1.5 w-1.5 rounded-full bg-muted-foreground shrink-0" title="已取消"></div>
-                <div v-else class="h-1.5 w-1.5 rounded-full bg-muted-foreground/20 shrink-0"></div>
-              </span>
-              <span class="w-14 shrink-0 text-muted-foreground text-xs">#{{ total - (currentPage - 1) * pageSize - index
+              <StatusDot :state="log.status" />
+              <span class="w-14 shrink-0 text-muted-foreground text-xs tabular-nums">#{{ total - (currentPage - 1) * pageSize - index
                 }}</span>
               <span class="w-8 shrink-0 flex justify-center" :title="getTaskTypeTitle(log.task_type || 'task')">
                 <GitBranch v-if="log.task_type === TASK_TYPE.REPO" class="h-3.5 w-3.5 text-primary" />
@@ -436,17 +426,9 @@ watch(() => route.query, (newQuery) => {
               </span>
             </div>
             <!-- 大屏行 -->
-            <div class="hidden sm:flex items-center gap-4 px-4 py-2">
-              <span class="w-3 flex justify-center shrink-0">
-                <div v-if="log.status === TASK_STATUS.SUCCESS" class="h-2 w-2 rounded-full bg-green-500 shrink-0" title="成功"></div>
-                <div v-else-if="log.status === TASK_STATUS.FAILED" class="h-2 w-2 rounded-full bg-red-500 shrink-0" title="失败"></div>
-                <div v-else-if="log.status === TASK_STATUS.RUNNING" class="h-2 w-2 rounded-full bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.5)] shrink-0" title="运行中"></div>
-                <div v-else-if="log.status === TASK_STATUS.PENDING" class="h-2 w-2 rounded-full bg-blue-400 animate-pulse shrink-0" title="等待中"></div>
-                <div v-else-if="log.status === TASK_STATUS.TIMEOUT" class="h-2 w-2 rounded-full bg-orange-500 shrink-0" title="超时"></div>
-                <div v-else-if="log.status === TASK_STATUS.CANCELLED" class="h-2 w-2 rounded-full bg-muted-foreground shrink-0" title="已取消"></div>
-                <div v-else class="h-2 w-2 rounded-full bg-muted-foreground/20 shrink-0"></div>
-              </span>
-              <span class="w-16 shrink-0 text-muted-foreground text-sm">#{{ total - (currentPage - 1) * pageSize - index
+            <div class="hidden sm:flex items-center gap-2 px-4 py-2">
+              <StatusDot :state="log.status" />
+              <span class="w-16 shrink-0 text-muted-foreground text-sm tabular-nums">#{{ total - (currentPage - 1) * pageSize - index
                 }}</span>
               <span class="w-10 shrink-0 flex justify-center" :title="getTaskTypeTitle(log.task_type || 'task')">
                 <GitBranch v-if="log.task_type === TASK_TYPE.REPO" class="h-4 w-4 text-primary" />
